@@ -1,0 +1,60 @@
+# =========================================
+# GearLabGaming - Cloudflare Workers 配置
+# =========================================
+
+name = "gearlabgaming"
+main = "src/index.ts"
+compatibility_date = "2026-03-15"
+compatibility_flags = ["nodejs_compat"]
+
+# Cloudflare account (需要替换为你的 account_id)
+# account_id = ""
+
+# Workers 开发模式
+workers_dev = true
+
+# =========================================
+# D1 数据库 (使用已创建的数据库)
+# =========================================
+[[d1_databases]]
+binding = "DB"
+database_name = "gearlabgaming"
+database_id = "76d8fbcb-a3b3-478e-9460-3423f3b0eda4"
+migrations_dir = "./migrations"
+
+# =========================================
+# R2 存储 (需要在 Cloudflare Dashboard 启用)
+# =========================================
+# [[r2_buckets]]
+# binding = "MEDIA_BUCKET"
+# bucket_name = "gearlabgaming-media"
+
+# =========================================
+# KV 缓存 (可选)
+# =========================================
+# [[kv_namespaces]]
+# binding = "CACHE_KV"
+# id = ""
+
+# =========================================
+# 环境变量
+# =========================================
+[vars]
+ENVIRONMENT = "development"
+SITE_NAME = "GearLabGaming"
+SITE_URL = "https://gearlabgaming.com"
+
+# =========================================
+# 生产环境配置
+# =========================================
+[env.production]
+workers_dev = false
+[env.production.vars]
+ENVIRONMENT = "production"
+SITE_URL = "https://gearlabgaming.com"
+
+# =========================================
+# 可观测性
+# =========================================
+[observability]
+enabled = true
