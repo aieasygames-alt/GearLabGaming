@@ -550,7 +550,7 @@ const COLLECTIONS = {
   products: 'col-products-ce613aa5',
   articles: 'col-articles-f7a0326f',
   categories: 'col-categories-d8563a2b',
-  authors: 'col-authors-c6c7e80c'
+  authors: 'col-authors-5dc12aff'
 }
 
 // ============================================
@@ -809,6 +809,10 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <meta name="description" content="${metaDescription}" />
   <meta name="color-scheme" content="dark light" />
   ${seo.keywords ? `<meta name="keywords" content="${seo.keywords}" />` : ''}
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="512x512" href="https://gearlabgaming.com/favicon.png" />
+  <link rel="apple-touch-icon" sizes="512x512" href="https://gearlabgaming.com/favicon.png" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="${metaType}" />
@@ -2015,6 +2019,29 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
       </div>
     </section>
   `, locale, `/${locale}/category/${slug}`))
+})
+
+// Static assets routes (served from R2)
+app.get('/favicon.png', async (c) => {
+  const object = await c.env.MEDIA_BUCKET.get('favicon.png')
+  if (!object) return c.text('Not found', 404)
+
+  const headers = new Headers()
+  object.writeHttpMetadata(headers)
+  headers.set('Cache-Control', 'public, max-age=86400')
+
+  return new Response(object.body, { headers })
+})
+
+app.get('/og-image.png', async (c) => {
+  const object = await c.env.MEDIA_BUCKET.get('og-image.png')
+  if (!object) return c.text('Not found', 404)
+
+  const headers = new Headers()
+  object.writeHttpMetadata(headers)
+  headers.set('Cache-Control', 'public, max-age=86400')
+
+  return new Response(object.body, { headers })
 })
 
 // Mount core app (catch-all)
