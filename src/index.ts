@@ -699,9 +699,8 @@ const COLLECTIONS = {
   products: 'col-products-ce613aa5',
   articles: 'col-articles-f7a0326f',
   categories: 'col-categories-d8563a2b',
-  authors: 'col-authors-5dc12aff',
-  priceHistory: 'col-price-history', // Will be assigned after sync
-  comments: 'col-comments' // Will be assigned after sync
+  authors: 'col-authors-5dc12aff'
+  // Note: price-history and comments collections are queried by name in API routes
 }
 
 // ============================================
@@ -2012,16 +2011,26 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
       </div>
 
       <script>
+        // Translations (injected at server-side)
+        const TRANSLATIONS = {
+          wishlistAdd: '${t(locale, 'wishlist.add')}',
+          wishlistRemove: '${t(locale, 'wishlist.remove')}',
+          priceLowest: '${t(locale, 'priceHistory.lowest')}',
+          priceAverage: '${t(locale, 'priceHistory.average')}',
+          priceHighest: '${t(locale, 'priceHistory.highest')}',
+          commentSuccess: '${t(locale, 'comments.success')}'
+        };
+
         // Wishlist functionality
         function toggleWishlist(productId) {
           let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
           const index = wishlist.indexOf(productId);
           if (index > -1) {
             wishlist.splice(index, 1);
-            document.getElementById('wishlist-btn-' + productId).textContent = '❤️ ${t(locale, 'wishlist.add')}';
+            document.getElementById('wishlist-btn-' + productId).textContent = '❤️ ' + TRANSLATIONS.wishlistAdd;
           } else {
             wishlist.push(productId);
-            document.getElementById('wishlist-btn-' + productId).textContent = '💖 ${t(locale, 'wishlist.remove')}';
+            document.getElementById('wishlist-btn-' + productId).textContent = '💖 ' + TRANSLATIONS.wishlistRemove;
           }
           localStorage.setItem('wishlist', JSON.stringify(wishlist));
         }
@@ -2030,7 +2039,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
         (function() {
           let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
           if (wishlist.includes('${p.id}')) {
-            document.getElementById('wishlist-btn-${p.id}').textContent = '💖 ${t(locale, 'wishlist.remove')}';
+            document.getElementById('wishlist-btn-${p.id}').textContent = '💖 ' + TRANSLATIONS.wishlistRemove;
           }
 
           // Load price history
@@ -2044,9 +2053,9 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
                 const avg = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
                 document.getElementById('price-history-chart').innerHTML = \`
                   <div class="grid grid-cols-3 gap-4 text-center">
-                    <div><div class="text-2xl font-bold text-green-400">\$\${min}</div><div class="text-sm text-gray-400">${t(locale, 'priceHistory.lowest')}</div></div>
-                    <div><div class="text-2xl font-bold">\$\${avg}</div><div class="text-sm text-gray-400">${t(locale, 'priceHistory.average')}</div></div>
-                    <div><div class="text-2xl font-bold text-red-400">\$\${max}</div><div class="text-sm text-gray-400">${t(locale, 'priceHistory.highest')}</div></div>
+                    <div><div class="text-2xl font-bold text-green-400">\$\${min}</div><div class="text-sm text-gray-400">\${TRANSLATIONS.priceLowest}</div></div>
+                    <div><div class="text-2xl font-bold">\$\${avg}</div><div class="text-sm text-gray-400">\${TRANSLATIONS.priceAverage}</div></div>
+                    <div><div class="text-2xl font-bold text-red-400">\$\${max}</div><div class="text-sm text-gray-400">\${TRANSLATIONS.priceHighest}</div></div>
                   </div>
                 \`;
               }
@@ -2057,15 +2066,23 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             .then(r => r.json())
             .then(data => {
               if (data.success && data.data.length > 0) {
-                document.getElementById('comments-list').innerHTML = data.data.map(c => \`
-                  <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-                    <div class="flex items-center gap-2 mb-2">
-                      <span class="font-bold">\${JSON.parse(c.author).name}</span>
-                      <span class="text-yellow-400">\${'⭐'.repeat(c.rating || 0)}</span>
+                document.getElementById('comments-list').innerHTML = data.data.map(c => {
+                  let authorName;
+                  try {
+                    authorName = JSON.parse(c.author).name;
+                  } catch (e) {
+                    authorName = 'Anonymous';
+                  }
+                  return \`
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+                      <div class="flex items-center gap-2 mb-2">
+                        <span class="font-bold">\${authorName}</span>
+                        <span class="text-yellow-400">\${'⭐'.repeat(c.rating || 0)}</span>
+                      </div>
+                      <p class="text-gray-300">\${c.content}</p>
                     </div>
-                    <p class="text-gray-300">\${c.content}</p>
-                  </div>
-                \`).join('');
+                  \`;
+                }).join('');
               }
             });
 
@@ -2086,10 +2103,15 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             .then(r => r.json())
             .then(data => {
               if (data.success) {
-                alert('${t(locale, 'comments.success')}');
+                alert(TRANSLATIONS.commentSuccess);
                 this.reset();
                 location.reload();
+              } else {
+                alert(data.error || 'Failed to submit comment');
               }
+            })
+            .catch(err => {
+              alert('Error submitting comment: ' + err.message);
             });
           });
         })();
@@ -2297,19 +2319,47 @@ app.get('/api/price-history/:productId', async (c) => {
   const db = c.env.DB
 
   try {
-    const priceHistory = await db.prepare(`
-      SELECT * FROM price_history
-      WHERE product_id = ?
+    // Query price history from content table where collection is 'price-history'
+    // and data contains product reference
+    const allPriceHistory = await db.prepare(`
+      SELECT * FROM content
+      WHERE collection_id = (SELECT id FROM collections WHERE name = 'price-history')
       ORDER BY created_at DESC
-      LIMIT 90
-    `).bind(productId).all()
+      LIMIT 100
+    `).all()
+
+    // Filter by product in client-side since product reference is in JSON data
+    const priceHistory = (allPriceHistory.results || []).filter((item: any) => {
+      try {
+        const data = typeof item.data === 'string' ? JSON.parse(item.data) : item.data
+        return data.product === productId
+      } catch (e) {
+        return false
+      }
+    })
 
     return c.json({
       success: true,
-      data: priceHistory.results || []
+      data: priceHistory.map((item: any) => {
+        const data = typeof item.data === 'string' ? JSON.parse(item.data) : item.data
+        return {
+          id: item.id,
+          price: data.price,
+          currency: data.currency || 'USD',
+          source: data.source || 'amazon',
+          availability: data.availability || 'in-stock',
+          discount: data.discount,
+          notes: data.notes,
+          createdAt: item.created_at
+        }
+      })
     })
   } catch (error) {
-    return c.json({ success: false, error: 'Failed to fetch price history' }, 500)
+    // If collection doesn't exist yet, return empty data
+    return c.json({
+      success: true,
+      data: []
+    })
   }
 })
 
@@ -2318,23 +2368,54 @@ app.get('/api/price-history/:productId', async (c) => {
 // ============================================
 
 app.get('/api/comments/:contentType/:contentId', async (c) => {
-  const contentType = c.req.param('contentType') // 'product' or 'article'
+  const contentType = c.req.param('contentType')
   const contentId = c.req.param('contentId')
   const db = c.env.DB
 
+  // Validate contentType
+  if (contentType !== 'product' && contentType !== 'article') {
+    return c.json({ success: false, error: 'Invalid content type' }, 400)
+  }
+
   try {
-    const comments = await db.prepare(`
-      SELECT * FROM comments
-      WHERE ${contentType}_id = ? AND status = 'approved'
+    // Query comments from content table
+    const allComments = await db.prepare(`
+      SELECT * FROM content
+      WHERE collection_id = (SELECT id FROM collections WHERE name = 'comments')
+      AND status = 'published'
       ORDER BY created_at DESC
-    `).bind(contentId).all()
+    `).all()
+
+    // Filter by content type and ID
+    const comments = (allComments.results || []).filter((item: any) => {
+      try {
+        const data = typeof item.data === 'string' ? JSON.parse(item.data) : item.data
+        const idField = contentType === 'product' ? 'product' : 'article'
+        return data[idField] === contentId
+      } catch (e) {
+        return false
+      }
+    })
 
     return c.json({
       success: true,
-      data: comments.results || []
+      data: comments.map((item: any) => {
+        const data = typeof item.data === 'string' ? JSON.parse(item.data) : item.data
+        return {
+          id: item.id,
+          author: data.author,
+          content: data.content,
+          rating: data.rating,
+          createdAt: item.created_at
+        }
+      })
     })
   } catch (error) {
-    return c.json({ success: false, error: 'Failed to fetch comments' }, 500)
+    // If collection doesn't exist yet, return empty data
+    return c.json({
+      success: true,
+      data: []
+    })
   }
 })
 
@@ -2348,23 +2429,50 @@ app.post('/api/comments', async (c) => {
       return c.json({ success: false, error: 'Missing required fields' }, 400)
     }
 
-    const result = await db.prepare(`
-      INSERT INTO comments (product_id, article_id, author, content, rating, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 'approved', datetime('now'), datetime('now'))
-    `).bind(
-      product || null,
-      article || null,
-      JSON.stringify(author),
+    // Get the comments collection ID
+    const collectionResult = await db.prepare(`
+      SELECT id FROM collections WHERE name = 'comments'
+    `).first()
+
+    if (!collectionResult) {
+      return c.json({ success: false, error: 'Comments collection not found. Please sync collections first.' }, 500)
+    }
+
+    // Generate a unique ID for the comment
+    const commentId = `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const now = Math.floor(Date.now() / 1000)
+
+    // Create comment data structure
+    const commentData = {
+      product,
+      article,
+      author,
       content,
-      rating || null
+      rating
+    }
+
+    // Insert into content table
+    await db.prepare(`
+      INSERT INTO content (id, collection_id, slug, title, data, status, author_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      commentId,
+      collectionResult.id,
+      commentId,
+      `Comment by ${author.name}`,
+      JSON.stringify(commentData),
+      'published',
+      'system', // Default author for API comments
+      now,
+      now
     ).run()
 
     return c.json({
       success: true,
-      data: { id: result.meta.last_row_id }
+      data: { id: commentId }
     })
   } catch (error) {
-    return c.json({ success: false, error: 'Failed to create comment' }, 500)
+    return c.json({ success: false, error: 'Failed to create comment: ' + (error as Error).message }, 500)
   }
 })
 
