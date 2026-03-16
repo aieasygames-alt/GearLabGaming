@@ -73,7 +73,26 @@ const TRANSLATIONS: Record<Locale, any> = {
     products: {
       title: 'All Products',
       notFound: 'No products found.',
-      readReview: 'Read Review'
+      readReview: 'Read Review',
+      resultsCount: 'products found'
+    },
+    filter: {
+      category: 'Category',
+      brand: 'Brand',
+      minPrice: 'Min Price',
+      maxPrice: 'Max Price',
+      minRating: 'Min Rating',
+      sortBy: 'Sort By',
+      allCategories: 'All Categories',
+      allBrands: 'All Brands',
+      anyRating: 'Any Rating',
+      sortNewest: 'Newest',
+      sortRating: 'Highest Rated',
+      sortPriceAsc: 'Price: Low to High',
+      sortPriceDesc: 'Price: High to Low',
+      sortName: 'Name (A-Z)',
+      apply: 'Apply Filters',
+      reset: 'Reset'
     },
     articles: {
       title: 'All Articles',
@@ -108,6 +127,14 @@ const TRANSLATIONS: Record<Locale, any> = {
       productsCount: 'Products',
       noProducts: 'No products in this category yet.'
     },
+    search: {
+      title: 'Search',
+      placeholder: 'Search products and articles...',
+      search: 'Search',
+      all: 'All',
+      noResults: 'No results found. Try different keywords.',
+      resultsFound: 'results found'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. All rights reserved.'
     }
@@ -127,7 +154,26 @@ const TRANSLATIONS: Record<Locale, any> = {
     products: {
       title: '所有产品',
       notFound: '暂无产品。',
-      readReview: '查看评测'
+      readReview: '查看评测',
+      resultsCount: '个产品'
+    },
+    filter: {
+      category: '分类',
+      brand: '品牌',
+      minPrice: '最低价',
+      maxPrice: '最高价',
+      minRating: '最低评分',
+      sortBy: '排序',
+      allCategories: '全部分类',
+      allBrands: '全部品牌',
+      anyRating: '不限评分',
+      sortNewest: '最新发布',
+      sortRating: '评分最高',
+      sortPriceAsc: '价格从低到高',
+      sortPriceDesc: '价格从高到低',
+      sortName: '名称排序',
+      apply: '应用筛选',
+      reset: '重置'
     },
     articles: {
       title: '所有文章',
@@ -162,6 +208,14 @@ const TRANSLATIONS: Record<Locale, any> = {
       productsCount: '个产品',
       noProducts: '该分类暂无产品。'
     },
+    search: {
+      title: '搜索',
+      placeholder: '搜索产品和文章...',
+      search: '搜索',
+      all: '全部',
+      noResults: '未找到结果，请尝试其他关键词。',
+      resultsFound: '个结果'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. 保留所有权利。'
     }
@@ -181,7 +235,26 @@ const TRANSLATIONS: Record<Locale, any> = {
     products: {
       title: 'Tous les produits',
       notFound: 'Aucun produit trouvé.',
-      readReview: 'Lire l\'avis'
+      readReview: 'Lire l\'avis',
+      resultsCount: 'produits trouvés'
+    },
+    filter: {
+      category: 'Catégorie',
+      brand: 'Marque',
+      minPrice: 'Prix Min',
+      maxPrice: 'Prix Max',
+      minRating: 'Note Min',
+      sortBy: 'Trier par',
+      allCategories: 'Toutes les catégories',
+      allBrands: 'Toutes les marques',
+      anyRating: 'Toute note',
+      sortNewest: 'Plus récents',
+      sortRating: 'Mieux notés',
+      sortPriceAsc: 'Prix croissant',
+      sortPriceDesc: 'Prix décroissant',
+      sortName: 'Nom (A-Z)',
+      apply: 'Appliquer',
+      reset: 'Réinitialiser'
     },
     articles: {
       title: 'Tous les articles',
@@ -216,6 +289,14 @@ const TRANSLATIONS: Record<Locale, any> = {
       productsCount: 'Produits',
       noProducts: 'Aucun produit dans cette catégorie.'
     },
+    search: {
+      title: 'Rechercher',
+      placeholder: 'Rechercher des produits et articles...',
+      search: 'Rechercher',
+      all: 'Tout',
+      noResults: 'Aucun résultat. Essayez d\'autres mots-clés.',
+      resultsFound: 'résultats trouvés'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. Tous droits réservés.'
     }
@@ -235,7 +316,26 @@ const TRANSLATIONS: Record<Locale, any> = {
     products: {
       title: 'Todos los productos',
       notFound: 'No se encontraron productos.',
-      readReview: 'Leer reseña'
+      readReview: 'Leer reseña',
+      resultsCount: 'productos encontrados'
+    },
+    filter: {
+      category: 'Categoría',
+      brand: 'Marca',
+      minPrice: 'Precio Mín',
+      maxPrice: 'Precio Máx',
+      minRating: 'Puntuación Mín',
+      sortBy: 'Ordenar por',
+      allCategories: 'Todas las categorías',
+      allBrands: 'Todas las marcas',
+      anyRating: 'Cualquier puntuación',
+      sortNewest: 'Más recientes',
+      sortRating: 'Mejor valorados',
+      sortPriceAsc: 'Precio ascendente',
+      sortPriceDesc: 'Precio descendente',
+      sortName: 'Nombre (A-Z)',
+      apply: 'Aplicar',
+      reset: 'Restablecer'
     },
     articles: {
       title: 'Todos los artículos',
@@ -270,6 +370,14 @@ const TRANSLATIONS: Record<Locale, any> = {
       productsCount: 'Productos',
       noProducts: 'No hay productos en esta categoría.'
     },
+    search: {
+      title: 'Buscar',
+      placeholder: 'Buscar productos y artículos...',
+      search: 'Buscar',
+      all: 'Todo',
+      noResults: 'No se encontraron resultados. Intenta con otras palabras.',
+      resultsFound: 'resultados encontrados'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. Todos los derechos reservados.'
     }
@@ -289,7 +397,26 @@ const TRANSLATIONS: Record<Locale, any> = {
     products: {
       title: 'Все продукты',
       notFound: 'Продукты не найдены.',
-      readReview: 'Читать обзор'
+      readReview: 'Читать обзор',
+      resultsCount: 'продуктов найдено'
+    },
+    filter: {
+      category: 'Категория',
+      brand: 'Бренд',
+      minPrice: 'Мин. цена',
+      maxPrice: 'Макс. цена',
+      minRating: 'Мин. рейтинг',
+      sortBy: 'Сортировать',
+      allCategories: 'Все категории',
+      allBrands: 'Все бренды',
+      anyRating: 'Любой рейтинг',
+      sortNewest: 'Новейшие',
+      sortRating: 'По рейтингу',
+      sortPriceAsc: 'Цена: по возрастанию',
+      sortPriceDesc: 'Цена: по убыванию',
+      sortName: 'По имени (А-Я)',
+      apply: 'Применить',
+      reset: 'Сбросить'
     },
     articles: {
       title: 'Все статьи',
@@ -323,6 +450,14 @@ const TRANSLATIONS: Record<Locale, any> = {
       contentSoon: 'Контент скоро появится...',
       productsCount: 'Продуктов',
       noProducts: 'В этой категории пока нет продуктов.'
+    },
+    search: {
+      title: 'Поиск',
+      placeholder: 'Поиск продуктов и статей...',
+      search: 'Искать',
+      all: 'Всё',
+      noResults: 'Ничего не найдено. Попробуйте другие ключевые слова.',
+      resultsFound: 'результатов найдено'
     },
     footer: {
       copyright: '© 2026 GearLabGaming. Все права защищены.'
@@ -478,19 +613,145 @@ function getHreflangTags(path: string): string {
   }).join('\n  ')
 }
 
-// Helper: Common HTML wrapper with locale support
-function wrapHTML(title: string, content: string, locale: Locale, path: string) {
+// Helper: Generate Schema.org structured data
+function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList', data: any, locale: Locale): string {
+  const baseUrl = 'https://gearlabgaming.com'
+
+  if (type === 'Website') {
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "GearLabGaming",
+      "description": TRANSLATIONS[locale].home.subtitle,
+      "url": baseUrl,
+      "inLanguage": locale,
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": `${baseUrl}/${locale}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string"
+      }
+    })
+  }
+
+  if (type === 'Product' && data) {
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": data.title,
+      "description": data.data?.verdict || '',
+      "brand": {
+        "@type": "Brand",
+        "name": data.data?.brand || ''
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": data.data?.price || 0,
+        "priceCurrency": "USD",
+        "availability": "https://schema.org/InStock"
+      },
+      "aggregateRating": data.data?.rating?.overall ? {
+        "@type": "AggregateRating",
+        "ratingValue": data.data.rating.overall,
+        "bestRating": 10,
+        "worstRating": 0,
+        "ratingCount": 1
+      } : undefined
+    })
+  }
+
+  if (type === 'Article' && data) {
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": data.title,
+      "description": data.data?.excerpt || '',
+      "author": {
+        "@type": "Person",
+        "name": "GearLabGaming Team"
+      },
+      "datePublished": data.created_at ? new Date(data.created_at).toISOString() : undefined,
+      "dateModified": data.updated_at ? new Date(data.updated_at).toISOString() : undefined
+    })
+  }
+
+  if (type === 'ItemList' && data) {
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": data.name || 'Products',
+      "numberOfItems": data.items?.length || 0,
+      "itemListElement": (data.items || []).map((item: any, index: number) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "url": `${baseUrl}/${locale}/product/${item.slug}`
+      }))
+    })
+  }
+
+  return ''
+}
+
+// SEO options interface
+interface SEOOptions {
+  description?: string
+  keywords?: string
+  image?: string
+  type?: 'website' | 'article' | 'product'
+  schemaType?: 'Website' | 'Product' | 'Article' | 'ItemList'
+  schemaData?: any
+}
+
+// Helper: Common HTML wrapper with locale support and enhanced SEO
+function wrapHTML(title: string, content: string, locale: Locale, path: string, seo: SEOOptions = {}) {
   const langSwitcher = getLanguageSwitcher(locale, path)
   const hreflangTags = getHreflangTags(path)
+  const canonicalUrl = `https://gearlabgaming.com/${locale}${path.replace(/^\/[a-z]{2}/, '') || '/'}`
+
+  // Generate Schema.org
+  const schemaOrg = seo.schemaType
+    ? generateSchemaOrg(seo.schemaType, seo.schemaData, locale)
+    : generateSchemaOrg('Website', null, locale)
+
+  // Default meta description
+  const metaDescription = seo.description || TRANSLATIONS[locale].home.subtitle
+  const metaImage = seo.image || 'https://gearlabgaming.com/og-image.png'
+  const metaType = seo.type || 'website'
 
   return `<!DOCTYPE html>
 <html lang="${locale}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary Meta Tags -->
   <title>${title} | GearLabGaming</title>
+  <meta name="title" content="${title} | GearLabGaming" />
+  <meta name="description" content="${metaDescription}" />
+  ${seo.keywords ? `<meta name="keywords" content="${seo.keywords}" />` : ''}
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="${metaType}" />
+  <meta property="og:url" content="${canonicalUrl}" />
+  <meta property="og:title" content="${title} | GearLabGaming" />
+  <meta property="og:description" content="${metaDescription}" />
+  <meta property="og:image" content="${metaImage}" />
+  <meta property="og:locale" content="${locale}" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="${canonicalUrl}" />
+  <meta property="twitter:title" content="${title} | GearLabGaming" />
+  <meta property="twitter:description" content="${metaDescription}" />
+  <meta property="twitter:image" content="${metaImage}" />
+
+  <!-- Canonical & Hreflang -->
+  <link rel="canonical" href="${canonicalUrl}" />
   ${hreflangTags}
-  <link rel="canonical" href="https://gearlabgaming.com/${locale}${path.replace(/^\/[a-z]{2}/, '') || '/'}" />
+
+  <!-- Schema.org Structured Data -->
+  <script type="application/ld+json">${schemaOrg}</script>
+
+  <!-- Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -503,6 +764,11 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string) 
         <a href="/${locale}/products" class="text-gray-300 hover:text-white">${t(locale, 'nav.products')}</a>
         <a href="/${locale}/articles" class="text-gray-300 hover:text-white">${t(locale, 'nav.articles')}</a>
         <a href="/${locale}/categories" class="text-gray-300 hover:text-white">${t(locale, 'nav.categories')}</a>
+        <a href="/${locale}/search" class="text-gray-300 hover:text-white" title="${t(locale, 'search.title')}">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </a>
         ${langSwitcher}
         <a href="/admin" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium">${t(locale, 'nav.admin')}</a>
       </div>
@@ -541,6 +807,306 @@ app.get('/api/info', (c) => {
     version: '1.0.0',
     supportedLocales: SUPPORTED_LOCALES
   })
+})
+
+// ============================================
+// SEO: SITEMAP & ROBOTS.TXT
+// ============================================
+
+app.get('/sitemap.xml', async (c) => {
+  const db = c.env.DB
+  const baseUrl = 'https://gearlabgaming.com'
+
+  // Get all content
+  const [products, articles, categories] = await Promise.all([
+    getContent(db, COLLECTIONS.products, { limit: 500 }),
+    getContent(db, COLLECTIONS.articles, { limit: 500 }),
+    getContent(db, COLLECTIONS.categories, { limit: 100 })
+  ])
+
+  const now = new Date().toISOString().split('T')[0]
+
+  // Generate URLs for all languages
+  let urls = ''
+
+  // Homepage for each language
+  for (const lang of SUPPORTED_LOCALES) {
+    urls += `
+  <url>
+    <loc>${baseUrl}/${lang}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>`
+  }
+
+  // Static pages for each language
+  const staticPages = ['products', 'articles', 'categories']
+  for (const lang of SUPPORTED_LOCALES) {
+    for (const page of staticPages) {
+      urls += `
+  <url>
+    <loc>${baseUrl}/${lang}/${page}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`
+    }
+  }
+
+  // Product pages for each language
+  for (const product of products) {
+    const lastmod = product.updated_at
+      ? new Date(product.updated_at).toISOString().split('T')[0]
+      : now
+    for (const lang of SUPPORTED_LOCALES) {
+      urls += `
+  <url>
+    <loc>${baseUrl}/${lang}/product/${product.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`
+    }
+  }
+
+  // Article pages for each language
+  for (const article of articles) {
+    const lastmod = article.updated_at
+      ? new Date(article.updated_at).toISOString().split('T')[0]
+      : now
+    for (const lang of SUPPORTED_LOCALES) {
+      urls += `
+  <url>
+    <loc>${baseUrl}/${lang}/article/${article.slug}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>`
+    }
+  }
+
+  // Category pages for each language
+  for (const category of categories) {
+    for (const lang of SUPPORTED_LOCALES) {
+      urls += `
+  <url>
+    <loc>${baseUrl}/${lang}/category/${category.data?.slug || category.slug}</loc>
+    <lastmod>${now}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>`
+    }
+  }
+
+  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${urls}
+</urlset>`
+
+  return c.text(sitemap, 200, {
+    'Content-Type': 'application/xml; charset=utf-8',
+    'Cache-Control': 'public, max-age=3600'
+  })
+})
+
+app.get('/robots.txt', (c) => {
+  const robots = `User-agent: *
+Allow: /
+
+Sitemap: https://gearlabgaming.com/sitemap.xml
+
+# Disallow admin area
+Disallow: /admin/`
+
+  return c.text(robots, 200, {
+    'Content-Type': 'text/plain; charset=utf-8'
+  })
+})
+
+// ============================================
+// SEARCH API & PAGE
+// ============================================
+
+// Search API endpoint
+app.get('/api/search', async (c) => {
+  const db = c.env.DB
+  const q = c.req.query('q') || ''
+  const type = c.req.query('type') || 'all' // products, articles, all
+  const limit = parseInt(c.req.query('limit') || '20')
+
+  if (!q || q.length < 2) {
+    return c.json({ results: [], query: q, total: 0 })
+  }
+
+  const searchQuery = `%${q.toLowerCase()}%`
+  let results: any[] = []
+
+  // Search products
+  if (type === 'all' || type === 'products') {
+    const productResults = await db.prepare(`
+      SELECT id, title, slug, data, created_at, updated_at, 'product' as type
+      FROM content
+      WHERE collection_id = ?
+      AND status = 'published'
+      AND (LOWER(title) LIKE ? OR LOWER(data) LIKE ?)
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).bind(COLLECTIONS.products, searchQuery, searchQuery, limit).all()
+
+    results = results.concat(productResults.results?.map((r: any) => ({
+      ...r,
+      data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
+    })) || [])
+  }
+
+  // Search articles
+  if (type === 'all' || type === 'articles') {
+    const articleResults = await db.prepare(`
+      SELECT id, title, slug, data, created_at, updated_at, 'article' as type
+      FROM content
+      WHERE collection_id = ?
+      AND status = 'published'
+      AND (LOWER(title) LIKE ? OR LOWER(data) LIKE ?)
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).bind(COLLECTIONS.articles, searchQuery, searchQuery, limit).all()
+
+    results = results.concat(articleResults.results?.map((r: any) => ({
+      ...r,
+      data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
+    })) || [])
+  }
+
+  return c.json({
+    results,
+    query: q,
+    total: results.length
+  })
+})
+
+// Search page
+app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
+  const lang = c.req.param('lang')
+  const locale: Locale = lang
+  const db = c.env.DB
+  const q = c.req.query('q') || ''
+  const type = c.req.query('type') || 'all'
+
+  let results: any[] = []
+
+  if (q && q.length >= 2) {
+    const searchQuery = `%${q.toLowerCase()}%`
+
+    // Search products
+    if (type === 'all' || type === 'products') {
+      const productResults = await db.prepare(`
+        SELECT id, title, slug, data, created_at, 'product' as type
+        FROM content
+        WHERE collection_id = ?
+        AND status = 'published'
+        AND (LOWER(title) LIKE ? OR LOWER(data) LIKE ?)
+        ORDER BY created_at DESC
+        LIMIT 20
+      `).bind(COLLECTIONS.products, searchQuery, searchQuery).all()
+
+      results = results.concat((productResults.results || []).map((r: any) => ({
+        ...r,
+        data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
+      })))
+    }
+
+    // Search articles
+    if (type === 'all' || type === 'articles') {
+      const articleResults = await db.prepare(`
+        SELECT id, title, slug, data, created_at, 'article' as type
+        FROM content
+        WHERE collection_id = ?
+        AND status = 'published'
+        AND (LOWER(title) LIKE ? OR LOWER(data) LIKE ?)
+        ORDER BY created_at DESC
+        LIMIT 20
+      `).bind(COLLECTIONS.articles, searchQuery, searchQuery).all()
+
+      results = results.concat((articleResults.results || []).map((r: any) => ({
+        ...r,
+        data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
+      })))
+    }
+  }
+
+  const resultsHTML = results.map((item: any) => {
+    const localized = getLocalizedContent(item, locale)
+    if (item.type === 'product') {
+      return `
+      <a href="/${locale}/product/${item.slug}" class="bg-gray-800 rounded-xl p-4 hover:bg-gray-700 transition flex gap-4">
+        <div class="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">${getCategoryIcon(item.data?.category)}</div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded">Product</span>
+            <span class="text-xs text-gray-500">${item.data?.brand || ''}</span>
+          </div>
+          <h3 class="font-bold">${localized.title}</h3>
+          <p class="text-sm text-gray-400 line-clamp-2">${(localized.data?.verdict || '').substring(0, 100)}...</p>
+        </div>
+      </a>`
+    } else {
+      return `
+      <a href="/${locale}/article/${item.slug}" class="bg-gray-800 rounded-xl p-4 hover:bg-gray-700 transition flex gap-4">
+        <div class="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex-shrink-0"></div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded">Article</span>
+            <span class="text-xs text-gray-500">${item.data?.type || 'article'}</span>
+          </div>
+          <h3 class="font-bold">${localized.title}</h3>
+          <p class="text-sm text-gray-400 line-clamp-2">${localized.data?.excerpt || ''}</p>
+        </div>
+      </a>`
+    }
+  }).join('') || (q ? `<p class="text-gray-400 text-center py-8">${t(locale, 'search.noResults')}</p>` : '')
+
+  const searchTitle = q ? `${t(locale, 'search.title')}: "${q}"` : t(locale, 'search.title')
+
+  return c.html(wrapHTML(searchTitle, `
+    <section class="py-12 px-4">
+      <div class="max-w-3xl mx-auto">
+        <!-- Search Form -->
+        <form method="get" class="mb-8">
+          <div class="flex gap-4">
+            <div class="flex-1 relative">
+              <input
+                type="text"
+                name="q"
+                value="${q}"
+                placeholder="${t(locale, 'search.placeholder')}"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pl-12 focus:outline-none focus:border-purple-500"
+              />
+              <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+            <select name="type" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500">
+              <option value="all" ${type === 'all' ? 'selected' : ''}>${t(locale, 'search.all')}</option>
+              <option value="products" ${type === 'products' ? 'selected' : ''}>${t(locale, 'nav.products')}</option>
+              <option value="articles" ${type === 'articles' ? 'selected' : ''}>${t(locale, 'nav.articles')}</option>
+            </select>
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg font-medium">
+              ${t(locale, 'search.search')}
+            </button>
+          </div>
+        </form>
+
+        <!-- Results -->
+        <div class="space-y-4">
+          ${resultsHTML}
+        </div>
+
+        ${results.length > 0 ? `<p class="text-gray-400 text-sm mt-4">${results.length} ${t(locale, 'search.resultsFound')}</p>` : ''}
+      </div>
+    </section>
+  `, locale, `/${locale}/search`))
 })
 
 // ============================================
@@ -640,14 +1206,71 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
 })
 
 // ============================================
-// LOCALIZED PRODUCTS LIST
+// LOCALIZED PRODUCTS LIST WITH FILTERS
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
   const lang = c.req.param('lang')
   const locale: Locale = lang
   const db = c.env.DB
-  const products = await getContent(db, COLLECTIONS.products, { limit: 50 })
+
+  // Get query parameters for filtering and sorting
+  const categoryFilter = c.req.query('category') || ''
+  const brandFilter = c.req.query('brand') || ''
+  const priceMin = parseInt(c.req.query('priceMin') || '0')
+  const priceMax = parseInt(c.req.query('priceMax') || '9999')
+  const sortBy = c.req.query('sort') || 'newest'
+  const ratingMin = parseFloat(c.req.query('rating') || '0')
+
+  // Get all products
+  let products = await getContent(db, COLLECTIONS.products, { limit: 100 })
+
+  // Get categories for filter dropdown
+  const categories = await getContent(db, COLLECTIONS.categories, { limit: 20 })
+
+  // Get unique brands
+  const brands = [...new Set(products.map((p: any) => p.data?.brand).filter(Boolean))].sort()
+
+  // Apply filters
+  if (categoryFilter) {
+    products = products.filter((p: any) => {
+      const cat = categories.find((c: any) => c.id === p.data?.category || c.data?.slug === categoryFilter)
+      return cat && (cat.id === p.data?.category || cat.data?.slug === categoryFilter || p.data?.category === categoryFilter)
+    })
+  }
+
+  if (brandFilter) {
+    products = products.filter((p: any) => p.data?.brand === brandFilter)
+  }
+
+  if (priceMin > 0 || priceMax < 9999) {
+    products = products.filter((p: any) => {
+      const price = p.data?.price || 0
+      return price >= priceMin && price <= priceMax
+    })
+  }
+
+  if (ratingMin > 0) {
+    products = products.filter((p: any) => (p.data?.rating?.overall || 0) >= ratingMin)
+  }
+
+  // Apply sorting
+  switch (sortBy) {
+    case 'price-asc':
+      products.sort((a: any, b: any) => (a.data?.price || 0) - (b.data?.price || 0))
+      break
+    case 'price-desc':
+      products.sort((a: any, b: any) => (b.data?.price || 0) - (a.data?.price || 0))
+      break
+    case 'rating':
+      products.sort((a: any, b: any) => (b.data?.rating?.overall || 0) - (a.data?.rating?.overall || 0))
+      break
+    case 'name':
+      products.sort((a: any, b: any) => a.title.localeCompare(b.title))
+      break
+    default: // newest
+      products.sort((a: any, b: any) => (b.created_at || 0) - (a.created_at || 0))
+  }
 
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
@@ -669,10 +1292,76 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
     </a>
   `}).join('') || `<p class="col-span-3 text-gray-400">${t(locale, 'products.notFound')}</p>`
 
+  // Build filter options HTML
+  const categoryOptions = categories.map((cat: any) =>
+    `<option value="${cat.data?.slug || cat.slug}" ${categoryFilter === (cat.data?.slug || cat.slug) ? 'selected' : ''}>${cat.data?.name || cat.title}</option>`
+  ).join('')
+
+  const brandOptions = brands.map((brand: string) =>
+    `<option value="${brand}" ${brandFilter === brand ? 'selected' : ''}>${brand}</option>`
+  ).join('')
+
   return c.html(wrapHTML(t(locale, 'products.title'), `
     <section class="py-12 px-4">
       <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl font-bold mb-8">${t(locale, 'products.title')}</h1>
+
+        <!-- Filters -->
+        <form method="get" class="bg-gray-800 rounded-xl p-6 mb-8">
+          <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.category')}</label>
+              <select name="category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+                <option value="">${t(locale, 'filter.allCategories')}</option>
+                ${categoryOptions}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.brand')}</label>
+              <select name="brand" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+                <option value="">${t(locale, 'filter.allBrands')}</option>
+                ${brandOptions}
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.minPrice')}</label>
+              <input type="number" name="priceMin" value="${priceMin || ''}" placeholder="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" />
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.maxPrice')}</label>
+              <input type="number" name="priceMax" value="${priceMax >= 9999 ? '' : priceMax}" placeholder="9999" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" />
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.minRating')}</label>
+              <select name="rating" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+                <option value="">${t(locale, 'filter.anyRating')}</option>
+                <option value="9" ${ratingMin === 9 ? 'selected' : ''}>9+</option>
+                <option value="8" ${ratingMin === 8 ? 'selected' : ''}>8+</option>
+                <option value="7" ${ratingMin === 7 ? 'selected' : ''}>7+</option>
+                <option value="6" ${ratingMin === 6 ? 'selected' : ''}>6+</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.sortBy')}</label>
+              <select name="sort" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+                <option value="newest" ${sortBy === 'newest' ? 'selected' : ''}>${t(locale, 'filter.sortNewest')}</option>
+                <option value="rating" ${sortBy === 'rating' ? 'selected' : ''}>${t(locale, 'filter.sortRating')}</option>
+                <option value="price-asc" ${sortBy === 'price-asc' ? 'selected' : ''}>${t(locale, 'filter.sortPriceAsc')}</option>
+                <option value="price-desc" ${sortBy === 'price-desc' ? 'selected' : ''}>${t(locale, 'filter.sortPriceDesc')}</option>
+                <option value="name" ${sortBy === 'name' ? 'selected' : ''}>${t(locale, 'filter.sortName')}</option>
+              </select>
+            </div>
+          </div>
+          <div class="mt-4 flex gap-4">
+            <button type="submit" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-medium">${t(locale, 'filter.apply')}</button>
+            <a href="/${locale}/products" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg font-medium">${t(locale, 'filter.reset')}</a>
+          </div>
+        </form>
+
+        <!-- Results count -->
+        <p class="text-gray-400 mb-4">${products.length} ${t(locale, 'products.resultsCount')}</p>
+
+        <!-- Products Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${productsHTML}</div>
       </div>
     </section>
