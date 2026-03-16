@@ -794,7 +794,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
 
   // Default meta description
   const metaDescription = seo.description || TRANSLATIONS[locale].home.subtitle
-  const metaImage = seo.image || 'https://gearlabgaming.com/og-image.png'
+  const metaImage = seo.image || 'https://gearlabgaming.com/og-image.webp'
   const metaType = seo.type || 'website'
 
   return `<!DOCTYPE html>
@@ -810,9 +810,10 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <meta name="color-scheme" content="dark light" />
   ${seo.keywords ? `<meta name="keywords" content="${seo.keywords}" />` : ''}
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="512x512" href="https://gearlabgaming.com/favicon.png" />
-  <link rel="apple-touch-icon" sizes="512x512" href="https://gearlabgaming.com/favicon.png" />
+  <!-- Favicon with WebP support -->
+  <link rel="icon" type="image/webp" href="https://gearlabgaming.com/favicon.webp" />
+  <link rel="icon" type="image/png" sizes="256x256" href="https://gearlabgaming.com/favicon-256.png" />
+  <link rel="apple-touch-icon" sizes="256x256" href="https://gearlabgaming.com/favicon-256.png" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="${metaType}" />
@@ -2022,8 +2023,8 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
 })
 
 // Static assets routes (served from R2)
-app.get('/favicon.png', async (c) => {
-  const object = await c.env.MEDIA_BUCKET.get('favicon.png')
+app.get('/favicon.webp', async (c) => {
+  const object = await c.env.MEDIA_BUCKET.get('favicon.webp')
   if (!object) return c.text('Not found', 404)
 
   const headers = new Headers()
@@ -2033,8 +2034,19 @@ app.get('/favicon.png', async (c) => {
   return new Response(object.body, { headers })
 })
 
-app.get('/og-image.png', async (c) => {
-  const object = await c.env.MEDIA_BUCKET.get('og-image.png')
+app.get('/favicon-256.png', async (c) => {
+  const object = await c.env.MEDIA_BUCKET.get('favicon-256.png')
+  if (!object) return c.text('Not found', 404)
+
+  const headers = new Headers()
+  object.writeHttpMetadata(headers)
+  headers.set('Cache-Control', 'public, max-age=86400')
+
+  return new Response(object.body, { headers })
+})
+
+app.get('/og-image.webp', async (c) => {
+  const object = await c.env.MEDIA_BUCKET.get('og-image.webp')
   if (!object) return c.text('Not found', 404)
 
   const headers = new Headers()
