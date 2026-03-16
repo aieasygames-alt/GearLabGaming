@@ -43,6 +43,8 @@ migrations_dir = "./migrations"
 ENVIRONMENT = "development"
 SITE_NAME = "GearLabGaming"
 SITE_URL = "https://gearlabgaming.com"
+# Google Analytics 4 Measurement ID (可选)
+# GA_MEASUREMENT_ID = "G-XXXXXXXXXX"
 
 # =========================================
 # 自定义域名路由

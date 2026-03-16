@@ -32,3 +32,6 @@ coverage/
 
 # Cloudflare
 .mf/
+
+# Sensitive files
+ACCOUNT_INFO.md
