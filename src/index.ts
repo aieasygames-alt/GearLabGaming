@@ -91,7 +91,7 @@ const TRANSLATIONS: Record<Locale, any> = {
       sortPriceAsc: 'Price: Low to High',
       sortPriceDesc: 'Price: High to Low',
       sortName: 'Name (A-Z)',
-      apply: 'Apply Filters',
+      apply: 'Apply',
       reset: 'Reset'
     },
     articles: {
@@ -138,6 +138,19 @@ const TRANSLATIONS: Record<Locale, any> = {
     theme: {
       toggle: 'Toggle theme'
     },
+    compare: {
+      title: 'Compare Products',
+      add: 'Add to Compare',
+      remove: 'Remove',
+      clear: 'Clear All',
+      noProducts: 'No products selected for comparison',
+      selectMore: 'Select 2-4 products to compare',
+      specs: 'Specifications',
+      ratings: 'Ratings',
+      price: 'Price',
+      rating: 'Rating',
+      best: 'Best'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. All rights reserved.'
     }
@@ -175,7 +188,7 @@ const TRANSLATIONS: Record<Locale, any> = {
       sortPriceAsc: '价格从低到高',
       sortPriceDesc: '价格从高到低',
       sortName: '名称排序',
-      apply: '应用筛选',
+      apply: '应用',
       reset: '重置'
     },
     articles: {
@@ -221,6 +234,19 @@ const TRANSLATIONS: Record<Locale, any> = {
     },
     theme: {
       toggle: '切换主题'
+    },
+    compare: {
+      title: '产品对比',
+      add: '添加对比',
+      remove: '移除',
+      clear: '清空',
+      noProducts: '未选择要对比的产品',
+      selectMore: '选择 2-4 个产品进行对比',
+      specs: '规格',
+      ratings: '评分',
+      price: '价格',
+      rating: '评分',
+      best: '最佳'
     },
     footer: {
       copyright: '© 2026 GearLabGaming. 保留所有权利。'
@@ -306,6 +332,19 @@ const TRANSLATIONS: Record<Locale, any> = {
     theme: {
       toggle: 'Changer le thème'
     },
+    compare: {
+      title: 'Comparer les produits',
+      add: 'Ajouter à comparer',
+      remove: 'Retirer',
+      clear: 'Effacer tout',
+      noProducts: 'Aucun produit sélectionné',
+      selectMore: 'Sélectionnez 2-4 produits à comparer',
+      specs: 'Spécifications',
+      ratings: 'Notes',
+      price: 'Prix',
+      rating: 'Note',
+      best: 'Meilleur'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. Tous droits réservés.'
     }
@@ -390,6 +429,19 @@ const TRANSLATIONS: Record<Locale, any> = {
     theme: {
       toggle: 'Cambiar tema'
     },
+    compare: {
+      title: 'Comparar productos',
+      add: 'Añadir a comparar',
+      remove: 'Quitar',
+      clear: 'Limpiar todo',
+      noProducts: 'Ningún producto seleccionado',
+      selectMore: 'Selecciona 2-4 productos para comparar',
+      specs: 'Especificaciones',
+      ratings: 'Puntuaciones',
+      price: 'Precio',
+      rating: 'Puntuación',
+      best: 'Mejor'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. Todos los derechos reservados.'
     }
@@ -473,6 +525,19 @@ const TRANSLATIONS: Record<Locale, any> = {
     },
     theme: {
       toggle: 'Сменить тему'
+    },
+    compare: {
+      title: 'Сравнить продукты',
+      add: 'Добавить к сравнению',
+      remove: 'Удалить',
+      clear: 'Очистить всё',
+      noProducts: 'Продукты не выбраны',
+      selectMore: 'Выберите 2-4 продукта для сравнения',
+      specs: 'Характеристики',
+      ratings: 'Оценки',
+      price: 'Цена',
+      rating: 'Рейтинг',
+      best: 'Лучший'
     },
     footer: {
       copyright: '© 2026 GearLabGaming. Все права защищены.'
@@ -1169,6 +1234,224 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
       </div>
     </section>
   `, locale, `/${locale}/search`))
+})
+
+// ============================================
+// PRODUCT COMPARISON PAGE
+// ============================================
+
+app.get('/:lang{en|zh|fr|es|ru}/compare', async (c) => {
+  const lang = c.req.param('lang')
+  const locale: Locale = lang
+  const db = c.env.DB
+  const slugs = c.req.query('products')?.split(',').filter(Boolean) || []
+
+  // Get all products for selection dropdown
+  const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
+
+  // Get selected products
+  const selectedProducts = slugs.length > 0
+    ? allProducts.filter((p: any) => slugs.includes(p.slug))
+    : []
+
+  // Build product selector HTML
+  const productOptions = allProducts.map((p: any) =>
+    `<option value="${p.slug}" ${slugs.includes(p.slug) ? 'selected' : ''}>${p.data?.brand || ''} ${p.title}</option>`
+  ).join('')
+
+  // Build comparison table HTML
+  let compareHTML = ''
+
+  if (selectedProducts.length >= 2) {
+    // Header row
+    compareHTML = `
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <th class="text-left p-4 bg-gray-50 dark:bg-gray-800 font-semibold">${t(locale, 'compare.specs')}</th>
+            ${selectedProducts.map((p: any) => `
+              <th class="text-center p-4 min-w-[200px]">
+                <a href="/${locale}/product/${p.slug}" class="hover:text-purple-400">
+                  <div class="text-4xl mb-2">${getCategoryIcon(p.data?.category)}</div>
+                  <div class="font-bold">${p.title}</div>
+                  <div class="text-sm text-purple-400">${p.data?.brand || ''}</div>
+                </a>
+              </th>
+            `).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Price Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">${t(locale, 'compare.price')}</td>
+            ${selectedProducts.map((p: any) => {
+              const price = p.data?.price || 0
+              const isBest = price === Math.min(...selectedProducts.map((x: any) => x.data?.price || 9999))
+              return `<td class="p-4 text-center ${isBest ? 'text-green-500 font-bold' : ''}">
+                $${price}
+                ${isBest ? `<span class="block text-xs text-green-400">${t(locale, 'compare.best')}</span>` : ''}
+              </td>`
+            }).join('')}
+          </tr>
+          <!-- Overall Rating Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">${t(locale, 'compare.rating')}</td>
+            ${selectedProducts.map((p: any) => {
+              const rating = p.data?.rating?.overall || 0
+              const isBest = rating === Math.max(...selectedProducts.map((x: any) => x.data?.rating?.overall || 0))
+              return `<td class="p-4 text-center ${isBest ? 'text-green-500 font-bold' : ''}">
+                ⭐ ${rating}/10
+                ${isBest ? `<span class="block text-xs text-green-400">${t(locale, 'compare.best')}</span>` : ''}
+              </td>`
+            }).join('')}
+          </tr>
+          <!-- Build Quality Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">${t(locale, 'detail.buildQuality')}</td>
+            ${selectedProducts.map((p: any) => {
+              const rating = p.data?.rating?.buildQuality || 0
+              const maxRating = Math.max(...selectedProducts.map((x: any) => x.data?.rating?.buildQuality || 0))
+              const isBest = rating === maxRating
+              return `<td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <div class="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 ${isBest ? 'bg-green-500' : ''}" style="width: ${rating * 10}%"></div>
+                  </div>
+                  <span class="${isBest ? 'text-green-500 font-bold' : ''}">${rating}</span>
+                </div>
+              </td>`
+            }).join('')}
+          </tr>
+          <!-- Performance Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">${t(locale, 'detail.performance')}</td>
+            ${selectedProducts.map((p: any) => {
+              const rating = p.data?.rating?.performance || 0
+              const maxRating = Math.max(...selectedProducts.map((x: any) => x.data?.rating?.performance || 0))
+              const isBest = rating === maxRating
+              return `<td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <div class="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 ${isBest ? 'bg-green-500' : ''}" style="width: ${rating * 10}%"></div>
+                  </div>
+                  <span class="${isBest ? 'text-green-500 font-bold' : ''}">${rating}</span>
+                </div>
+              </td>`
+            }).join('')}
+          </tr>
+          <!-- Value Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">${t(locale, 'detail.value')}</td>
+            ${selectedProducts.map((p: any) => {
+              const rating = p.data?.rating?.value || 0
+              const maxRating = Math.max(...selectedProducts.map((x: any) => x.data?.rating?.value || 0))
+              const isBest = rating === maxRating
+              return `<td class="p-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <div class="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div class="h-full bg-blue-500 ${isBest ? 'bg-green-500' : ''}" style="width: ${rating * 10}%"></div>
+                  </div>
+                  <span class="${isBest ? 'text-green-500 font-bold' : ''}">${rating}</span>
+                </div>
+              </td>`
+            }).join('')}
+          </tr>
+          <!-- Weight Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">Weight</td>
+            ${selectedProducts.map((p: any) => {
+              const weight = p.data?.specs?.weight || '-'
+              return `<td class="p-4 text-center">${weight}</td>`
+            }).join('')}
+          </tr>
+          <!-- Connectivity Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">Connectivity</td>
+            ${selectedProducts.map((p: any) => {
+              const conn = p.data?.specs?.connectivity || '-'
+              return `<td class="p-4 text-center capitalize">${conn}</td>`
+            }).join('')}
+          </tr>
+          <!-- Pros Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">${t(locale, 'detail.pros')}</td>
+            ${selectedProducts.map((p: any) => {
+              const pros = p.data?.pros || []
+              return `<td class="p-4 text-left">
+                <ul class="space-y-1">
+                  ${pros.slice(0, 5).map((pro: string) => `<li class="flex items-center gap-2 text-sm"><span class="text-green-400">✓</span> ${pro}</li>`).join('')}
+                </ul>
+              </td>`
+            }).join('')}
+          </tr>
+          <!-- Cons Row -->
+          <tr class="border-b border-gray-200 dark:border-gray-700">
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800">${t(locale, 'detail.cons')}</td>
+            ${selectedProducts.map((p: any) => {
+              const cons = p.data?.cons || []
+              return `<td class="p-4 text-left">
+                <ul class="space-y-1">
+                  ${cons.slice(0, 5).map((con: string) => `<li class="flex items-center gap-2 text-sm"><span class="text-red-400">✗</span> ${con}</li>`).join('')}
+                </ul>
+              </td>`
+            }).join('')}
+          </tr>
+          <!-- Actions Row -->
+          <tr>
+            <td class="p-4 font-medium bg-gray-50 dark:bg-gray-800"></td>
+            ${selectedProducts.map((p: any) => `
+              <td class="p-4 text-center">
+                <div class="flex flex-col gap-2">
+                  <a href="/${locale}/product/${p.slug}" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium">
+                    ${t(locale, 'products.readReview')}
+                  </a>
+                  ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm font-medium">
+                    ${t(locale, 'detail.buyAmazon')}
+                  </a>` : ''}
+                </div>
+              </td>
+            `).join('')}
+          </tr>
+        </tbody>
+      </table>
+    </div>`
+  } else {
+    compareHTML = `
+    <div class="text-center py-16">
+      <div class="text-6xl mb-4">⚖️</div>
+      <h2 class="text-2xl font-bold mb-4">${t(locale, 'compare.selectMore')}</h2>
+      <p class="text-gray-500 dark:text-gray-400">${t(locale, 'compare.noProducts')}</p>
+    </div>`
+  }
+
+  return c.html(wrapHTML(t(locale, 'compare.title'), `
+    <section class="py-12 px-4">
+      <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-8">${t(locale, 'compare.title')}</h1>
+
+        <!-- Product Selector -->
+        <form method="get" class="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8">
+          <div class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[300px]">
+              <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">${t(locale, 'compare.add')}</label>
+              <select name="products" multiple class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500 h-32">
+                ${productOptions}
+              </select>
+              <p class="text-xs text-gray-400 mt-1">Hold Ctrl/Cmd to select multiple (max 4)</p>
+            </div>
+            <div class="flex gap-2">
+              <button type="submit" class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-medium">${t(locale, 'filter.apply')}</button>
+              <a href="/${locale}/compare" class="bg-gray-700 hover:bg-gray-600 px-6 py-2 rounded-lg font-medium">${t(locale, 'compare.clear')}</a>
+            </div>
+          </div>
+        </form>
+
+        <!-- Comparison Table -->
+        ${compareHTML}
+      </div>
+    </section>
+  `, locale, `/${locale}/compare`))
 })
 
 // ============================================
