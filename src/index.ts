@@ -135,6 +135,9 @@ const TRANSLATIONS: Record<Locale, any> = {
       noResults: 'No results found. Try different keywords.',
       resultsFound: 'results found'
     },
+    theme: {
+      toggle: 'Toggle theme'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. All rights reserved.'
     }
@@ -215,6 +218,9 @@ const TRANSLATIONS: Record<Locale, any> = {
       all: '全部',
       noResults: '未找到结果，请尝试其他关键词。',
       resultsFound: '个结果'
+    },
+    theme: {
+      toggle: '切换主题'
     },
     footer: {
       copyright: '© 2026 GearLabGaming. 保留所有权利。'
@@ -297,6 +303,9 @@ const TRANSLATIONS: Record<Locale, any> = {
       noResults: 'Aucun résultat. Essayez d\'autres mots-clés.',
       resultsFound: 'résultats trouvés'
     },
+    theme: {
+      toggle: 'Changer le thème'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. Tous droits réservés.'
     }
@@ -378,6 +387,9 @@ const TRANSLATIONS: Record<Locale, any> = {
       noResults: 'No se encontraron resultados. Intenta con otras palabras.',
       resultsFound: 'resultados encontrados'
     },
+    theme: {
+      toggle: 'Cambiar tema'
+    },
     footer: {
       copyright: '© 2026 GearLabGaming. Todos los derechos reservados.'
     }
@@ -458,6 +470,9 @@ const TRANSLATIONS: Record<Locale, any> = {
       all: 'Всё',
       noResults: 'Ничего не найдено. Попробуйте другие ключевые слова.',
       resultsFound: 'результатов найдено'
+    },
+    theme: {
+      toggle: 'Сменить тему'
     },
     footer: {
       copyright: '© 2026 GearLabGaming. Все права защищены.'
@@ -586,12 +601,12 @@ function getLanguageSwitcher(currentLocale: Locale, currentPath: string): string
   const options = SUPPORTED_LOCALES.map(locale => {
     const isActive = locale === currentLocale
     const href = locale === DEFAULT_LOCALE ? `/${locale}${pathWithoutLang}` : `/${locale}${pathWithoutLang}`
-    return `<a href="${href}" class="block px-4 py-2 text-sm ${isActive ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-gray-700'}">${LOCALE_NAMES[locale]}</a>`
+    return `<a href="${href}" class="block px-4 py-2 text-sm ${isActive ? 'bg-purple-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}">${LOCALE_NAMES[locale]}</a>`
   }).join('')
 
   return `
     <div class="relative group">
-      <button class="flex items-center gap-2 px-3 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg">
+      <button class="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-white bg-gray-700 rounded-lg">
         <span>🌐</span>
         <span class="hidden sm:inline">${LOCALE_NAMES[currentLocale]}</span>
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -727,6 +742,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <title>${title} | GearLabGaming</title>
   <meta name="title" content="${title} | GearLabGaming" />
   <meta name="description" content="${metaDescription}" />
+  <meta name="color-scheme" content="dark light" />
   ${seo.keywords ? `<meta name="keywords" content="${seo.keywords}" />` : ''}
 
   <!-- Open Graph / Facebook -->
@@ -753,31 +769,77 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
 
   <!-- Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {}
+      }
+    }
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>body { font-family: 'Inter', sans-serif; }</style>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Theme transition */
+    * { transition: background-color 0.2s, border-color 0.2s, color 0.2s; }
+    /* Lazy load images */
+    img[loading="lazy"] { opacity: 0; transition: opacity 0.3s; }
+    img[loading="lazy"].loaded { opacity: 1; }
+  </style>
+
+  <!-- Theme Script (runs before render to prevent flash) -->
+  <script>
+    (function() {
+      const theme = localStorage.getItem('theme') ||
+        (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      if (theme === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
 </head>
-<body class="bg-gray-900 text-white min-h-screen">
-  <header class="bg-gray-800/50 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-700">
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+  <header class="bg-white/80 dark:bg-gray-800/50 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700">
     <nav class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <a href="/${locale}" class="text-2xl font-bold">🎮 GearLabGaming</a>
       <div class="flex items-center gap-4">
-        <a href="/${locale}/products" class="text-gray-300 hover:text-white">${t(locale, 'nav.products')}</a>
-        <a href="/${locale}/articles" class="text-gray-300 hover:text-white">${t(locale, 'nav.articles')}</a>
-        <a href="/${locale}/categories" class="text-gray-300 hover:text-white">${t(locale, 'nav.categories')}</a>
-        <a href="/${locale}/search" class="text-gray-300 hover:text-white" title="${t(locale, 'search.title')}">
+        <a href="/${locale}/products" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.products')}</a>
+        <a href="/${locale}/articles" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.articles')}</a>
+        <a href="/${locale}/categories" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.categories')}</a>
+        <a href="/${locale}/search" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white" title="${t(locale, 'search.title')}">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </a>
         ${langSwitcher}
-        <a href="/admin" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium">${t(locale, 'nav.admin')}</a>
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition" title="${t(locale, 'theme.toggle')}">
+          <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+          </svg>
+        </button>
+        <a href="/admin" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium text-white">${t(locale, 'nav.admin')}</a>
       </div>
     </nav>
   </header>
   ${content}
-  <footer class="bg-gray-800 border-t border-gray-700 py-8 px-4 text-center text-gray-500 mt-16">
+  <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 text-center text-gray-500 dark:text-gray-400 mt-16">
     <p>${t(locale, 'footer.copyright')}</p>
   </footer>
+
+  <!-- Theme Toggle Script -->
+  <script>
+    document.getElementById('theme-toggle').addEventListener('click', function() {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    });
+    // Lazy load images
+    document.querySelectorAll('img[loading="lazy"]').forEach(img => {
+      if (img.complete) img.classList.add('loaded');
+      else img.addEventListener('load', () => img.classList.add('loaded'));
+    });
+  </script>
 </body>
 </html>`
 }
@@ -1040,7 +1102,7 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
     const localized = getLocalizedContent(item, locale)
     if (item.type === 'product') {
       return `
-      <a href="/${locale}/product/${item.slug}" class="bg-gray-800 rounded-xl p-4 hover:bg-gray-700 transition flex gap-4">
+      <a href="/${locale}/product/${item.slug}" class="bg-white dark:bg-gray-800 rounded-xl p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex gap-4">
         <div class="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">${getCategoryIcon(item.data?.category)}</div>
         <div class="flex-1">
           <div class="flex items-center gap-2 mb-1">
@@ -1053,7 +1115,7 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
       </a>`
     } else {
       return `
-      <a href="/${locale}/article/${item.slug}" class="bg-gray-800 rounded-xl p-4 hover:bg-gray-700 transition flex gap-4">
+      <a href="/${locale}/article/${item.slug}" class="bg-white dark:bg-gray-800 rounded-xl p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex gap-4">
         <div class="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex-shrink-0"></div>
         <div class="flex-1">
           <div class="flex items-center gap-2 mb-1">
@@ -1081,13 +1143,13 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
                 name="q"
                 value="${q}"
                 placeholder="${t(locale, 'search.placeholder')}"
-                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 pl-12 focus:outline-none focus:border-purple-500"
+                class="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 pl-12 focus:outline-none focus:border-purple-500"
               />
               <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
               </svg>
             </div>
-            <select name="type" class="bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500">
+            <select name="type" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500">
               <option value="all" ${type === 'all' ? 'selected' : ''}>${t(locale, 'search.all')}</option>
               <option value="products" ${type === 'products' ? 'selected' : ''}>${t(locale, 'nav.products')}</option>
               <option value="articles" ${type === 'articles' ? 'selected' : ''}>${t(locale, 'nav.articles')}</option>
@@ -1103,7 +1165,7 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
           ${resultsHTML}
         </div>
 
-        ${results.length > 0 ? `<p class="text-gray-400 text-sm mt-4">${results.length} ${t(locale, 'search.resultsFound')}</p>` : ''}
+        ${results.length > 0 ? `<p class="text-gray-500 dark:text-gray-400 text-sm mt-4">${results.length} ${t(locale, 'search.resultsFound')}</p>` : ''}
       </div>
     </section>
   `, locale, `/${locale}/search`))
@@ -1127,8 +1189,8 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
     return `
-    <a href="/${locale}/product/${p.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="aspect-video bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
+    <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
+      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
       <div class="p-4">
         <div class="flex justify-between items-center mb-2">
           <span class="text-sm text-purple-400">${p.data?.brand || ''}</span>
@@ -1143,12 +1205,12 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
     return `
-    <a href="/${locale}/article/${a.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
+    <a href="/${locale}/article/${a.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="h-32 bg-gradient-to-br from-purple-600 to-blue-600"></div>
       <div class="p-4">
         <span class="text-xs text-purple-400 uppercase">${a.data?.type || 'article'}</span>
         <h3 class="font-bold mt-1">${localized.title}</h3>
-        <p class="text-gray-400 text-sm mt-2 line-clamp-2">${localized.data?.excerpt || ''}</p>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mt-2 line-clamp-2">${localized.data?.excerpt || ''}</p>
       </div>
     </a>
   `}).join('') || ''
@@ -1156,7 +1218,7 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
   const categoriesHTML = categories.map((cat: any) => {
     const localized = getLocalizedContent(cat, locale)
     return `
-    <a href="/${locale}/category/${cat.data?.slug || cat.slug}" class="bg-gray-800 rounded-xl p-6 text-center hover:bg-gray-700 transition block">
+    <a href="/${locale}/category/${cat.data?.slug || cat.slug}" class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition block">
       <div class="text-4xl mb-2">${cat.data?.icon || '📦'}</div>
       <div class="font-semibold">${localized.data?.name || localized.title}</div>
     </a>
@@ -1182,7 +1244,7 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
     </section>
 
     <!-- Featured Products -->
-    <section class="py-12 px-4 bg-gray-800/30">
+    <section class="py-12 px-4 bg-gray-100 dark:bg-gray-800/30">
       <div class="max-w-7xl mx-auto">
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-2xl font-bold">${t(locale, 'home.featured')}</h2>
@@ -1275,15 +1337,15 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
     return `
-    <a href="/${locale}/product/${p.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="aspect-video bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
+    <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
+      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
       <div class="p-4">
         <div class="flex justify-between items-center mb-2">
           <span class="text-sm text-purple-400">${p.data?.brand || ''}</span>
           <span class="text-sm bg-green-500/20 text-green-400 px-2 py-0.5 rounded">⭐ ${p.data?.rating?.overall || '-'}/10</span>
         </div>
         <h3 class="font-bold mb-2">${localized.title}</h3>
-        <p class="text-gray-400 text-sm mb-3">${(localized.data?.verdict || '').substring(0, 80)}...</p>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">${(localized.data?.verdict || '').substring(0, 80)}...</p>
         <div class="flex justify-between items-center">
           <span class="text-xl font-bold text-purple-400">$${p.data?.price || '-'}</span>
           <span class="text-purple-400">${t(locale, 'products.readReview')} →</span>
@@ -1307,33 +1369,33 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
         <h1 class="text-3xl font-bold mb-8">${t(locale, 'products.title')}</h1>
 
         <!-- Filters -->
-        <form method="get" class="bg-gray-800 rounded-xl p-6 mb-8">
+        <form method="get" class="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8">
           <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div>
               <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.category')}</label>
-              <select name="category" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+              <select name="category" class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
                 <option value="">${t(locale, 'filter.allCategories')}</option>
                 ${categoryOptions}
               </select>
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.brand')}</label>
-              <select name="brand" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+              <select name="brand" class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
                 <option value="">${t(locale, 'filter.allBrands')}</option>
                 ${brandOptions}
               </select>
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.minPrice')}</label>
-              <input type="number" name="priceMin" value="${priceMin || ''}" placeholder="0" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" />
+              <input type="number" name="priceMin" value="${priceMin || ''}" placeholder="0" class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" />
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.maxPrice')}</label>
-              <input type="number" name="priceMax" value="${priceMax >= 9999 ? '' : priceMax}" placeholder="9999" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" />
+              <input type="number" name="priceMax" value="${priceMax >= 9999 ? '' : priceMax}" placeholder="9999" class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500" />
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.minRating')}</label>
-              <select name="rating" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+              <select name="rating" class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
                 <option value="">${t(locale, 'filter.anyRating')}</option>
                 <option value="9" ${ratingMin === 9 ? 'selected' : ''}>9+</option>
                 <option value="8" ${ratingMin === 8 ? 'selected' : ''}>8+</option>
@@ -1343,7 +1405,7 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
             </div>
             <div>
               <label class="block text-sm text-gray-400 mb-2">${t(locale, 'filter.sortBy')}</label>
-              <select name="sort" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
+              <select name="sort" class="w-full bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500">
                 <option value="newest" ${sortBy === 'newest' ? 'selected' : ''}>${t(locale, 'filter.sortNewest')}</option>
                 <option value="rating" ${sortBy === 'rating' ? 'selected' : ''}>${t(locale, 'filter.sortRating')}</option>
                 <option value="price-asc" ${sortBy === 'price-asc' ? 'selected' : ''}>${t(locale, 'filter.sortPriceAsc')}</option>
@@ -1397,8 +1459,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
       <div class="max-w-4xl mx-auto">
         <a href="/${locale}/products" class="text-purple-400 mb-4 inline-block">${t(locale, 'detail.backProducts')}</a>
 
-        <div class="bg-gray-800 rounded-xl overflow-hidden">
-          <div class="aspect-video bg-gray-700 flex items-center justify-center text-8xl">${getCategoryIcon(p.data?.category)}</div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
+          <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-8xl">${getCategoryIcon(p.data?.category)}</div>
           <div class="p-8">
             <div class="flex items-center gap-4 mb-4">
               <span class="text-purple-400">${p.data?.brand}</span>
@@ -1410,10 +1472,10 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
 
             <div class="text-4xl font-bold text-purple-400 mb-6">$${p.data?.price}</div>
 
-            <p class="text-xl text-gray-300 mb-8">${localized.data?.verdict || ''}</p>
+            <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">${localized.data?.verdict || ''}</p>
 
             <!-- Specs -->
-            <div class="bg-gray-900 rounded-lg p-6 mb-8">
+            <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
               <h2 class="text-xl font-bold mb-4">${t(locale, 'detail.specs')}</h2>
               <div class="grid grid-cols-2 gap-4 text-sm">
                 ${p.data?.specs?.weight ? `<div><span class="text-gray-400">Weight:</span> <span class="font-medium">${p.data.specs.weight}</span></div>` : ''}
@@ -1424,7 +1486,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             </div>
 
             <!-- Rating Breakdown -->
-            <div class="bg-gray-900 rounded-lg p-6 mb-8">
+            <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
               <h2 class="text-xl font-bold mb-4">${t(locale, 'detail.rating')}</h2>
               <div class="space-y-3">
                 <div class="flex items-center gap-4">
@@ -1460,11 +1522,11 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
 
             <!-- Pros & Cons -->
             <div class="grid md:grid-cols-2 gap-6 mb-8">
-              <div class="bg-gray-900 rounded-lg p-6">
+              <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6">
                 <h2 class="text-xl font-bold mb-4 text-green-400">${t(locale, 'detail.pros')}</h2>
                 <ul class="space-y-2">${prosHTML}</ul>
               </div>
-              <div class="bg-gray-900 rounded-lg p-6">
+              <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6">
                 <h2 class="text-xl font-bold mb-4 text-red-400">${t(locale, 'detail.cons')}</h2>
                 <ul class="space-y-2">${consHTML}</ul>
               </div>
@@ -1495,7 +1557,7 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
     return `
-    <a href="/${locale}/article/${a.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
+    <a href="/${locale}/article/${a.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="h-40 bg-gradient-to-br from-purple-600 to-blue-600"></div>
       <div class="p-4">
         <div class="flex items-center gap-2 mb-2">
@@ -1503,7 +1565,7 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
           <span class="text-xs text-gray-500">${a.data?.readingTime || 5} ${t(locale, 'articles.minRead')}</span>
         </div>
         <h3 class="font-bold text-lg mb-2">${localized.title}</h3>
-        <p class="text-gray-400 text-sm line-clamp-2">${localized.data?.excerpt || ''}</p>
+        <p class="text-gray-500 dark:text-gray-400 text-sm line-clamp-2">${localized.data?.excerpt || ''}</p>
       </div>
     </a>
   `}).join('') || `<p class="col-span-3 text-gray-400">${t(locale, 'articles.notFound')}</p>`
@@ -1556,7 +1618,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
           </div>
         </header>
 
-        <div class="bg-gray-800 rounded-xl p-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-8">
           <div class="prose prose-invert max-w-none">
             ${localized.data?.content || `<p class="text-gray-400">${t(locale, 'detail.contentSoon')}</p>`}
           </div>
@@ -1565,7 +1627,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
         ${a.data?.quickVerdict ? `
         <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-6 mt-8">
           <h2 class="text-xl font-bold mb-4">${t(locale, 'detail.quickVerdict')}</h2>
-          <p class="text-gray-300">${a.data.quickVerdict.summary || ''}</p>
+          <p class="text-gray-600 dark:text-gray-300">${a.data.quickVerdict.summary || ''}</p>
         </div>
         ` : ''}
       </div>
@@ -1586,10 +1648,10 @@ app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
   const categoriesHTML = categories.map((cat: any) => {
     const localized = getLocalizedContent(cat, locale)
     return `
-    <a href="/${locale}/category/${cat.data?.slug || cat.slug}" class="bg-gray-800 rounded-xl p-8 text-center hover:bg-gray-700 transition block">
+    <a href="/${locale}/category/${cat.data?.slug || cat.slug}" class="bg-white dark:bg-gray-800 rounded-xl p-8 text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition block">
       <div class="text-6xl mb-4">${cat.data?.icon || '📦'}</div>
       <h3 class="text-xl font-bold mb-2">${localized.data?.name || localized.title}</h3>
-      <p class="text-gray-400 text-sm">${localized.data?.description || ''}</p>
+      <p class="text-gray-500 dark:text-gray-400 text-sm">${localized.data?.description || ''}</p>
     </a>
   `}).join('') || ''
 
@@ -1641,8 +1703,8 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   const productsHTML = filteredProducts.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
     return `
-    <a href="/${locale}/product/${p.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="aspect-video bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
+    <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
+      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
       <div class="p-4">
         <span class="text-sm text-purple-400">${p.data?.brand || ''}</span>
         <h3 class="font-bold mt-1">${localized.title}</h3>
