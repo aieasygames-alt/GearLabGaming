@@ -127,6 +127,57 @@ export default {
         title: 'Verdict',
         maxLength: 500,
       },
+      translations: {
+        type: 'object',
+        title: 'Translations',
+        helpText: 'Multi-language content (zh, fr, es, ru)',
+        properties: {
+          zh: {
+            type: 'object',
+            title: '中文 (Chinese)',
+            properties: {
+              name: { type: 'string', title: '产品名称' },
+              verdict: { type: 'textarea', title: '总结', maxLength: 500 },
+              pros: { type: 'array', title: '优点', items: { type: 'string' } },
+              cons: { type: 'array', title: '缺点', items: { type: 'string' } },
+              reviewContent: { type: 'quill', title: '完整评测' },
+            },
+          },
+          fr: {
+            type: 'object',
+            title: 'Français (French)',
+            properties: {
+              name: { type: 'string', title: 'Nom du produit' },
+              verdict: { type: 'textarea', title: 'Verdict', maxLength: 500 },
+              pros: { type: 'array', title: 'Avantages', items: { type: 'string' } },
+              cons: { type: 'array', title: 'Inconvénients', items: { type: 'string' } },
+              reviewContent: { type: 'quill', title: 'Avis complet' },
+            },
+          },
+          es: {
+            type: 'object',
+            title: 'Español (Spanish)',
+            properties: {
+              name: { type: 'string', title: 'Nombre del producto' },
+              verdict: { type: 'textarea', title: 'Veredicto', maxLength: 500 },
+              pros: { type: 'array', title: 'Ventajas', items: { type: 'string' } },
+              cons: { type: 'array', title: 'Desventajas', items: { type: 'string' } },
+              reviewContent: { type: 'quill', title: 'Reseña completa' },
+            },
+          },
+          ru: {
+            type: 'object',
+            title: 'Русский (Russian)',
+            properties: {
+              name: { type: 'string', title: 'Название продукта' },
+              verdict: { type: 'textarea', title: 'Вердикт', maxLength: 500 },
+              pros: { type: 'array', title: 'Плюсы', items: { type: 'string' } },
+              cons: { type: 'array', title: 'Минусы', items: { type: 'string' } },
+              reviewContent: { type: 'quill', title: 'Полный обзор' },
+            },
+          },
+        },
+      },
       bestFor: {
         type: 'select',
         title: 'Best For',

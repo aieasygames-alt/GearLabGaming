@@ -143,6 +143,49 @@ export default {
         title: 'Featured Article',
         default: false,
       },
+      translations: {
+        type: 'object',
+        title: 'Translations',
+        helpText: 'Multi-language content (zh, fr, es, ru)',
+        properties: {
+          zh: {
+            type: 'object',
+            title: '中文 (Chinese)',
+            properties: {
+              title: { type: 'string', title: '标题', maxLength: 200 },
+              excerpt: { type: 'textarea', title: '摘要', maxLength: 300 },
+              content: { type: 'quill', title: '正文内容' },
+            },
+          },
+          fr: {
+            type: 'object',
+            title: 'Français (French)',
+            properties: {
+              title: { type: 'string', title: 'Titre', maxLength: 200 },
+              excerpt: { type: 'textarea', title: 'Extrait', maxLength: 300 },
+              content: { type: 'quill', title: 'Contenu' },
+            },
+          },
+          es: {
+            type: 'object',
+            title: 'Español (Spanish)',
+            properties: {
+              title: { type: 'string', title: 'Título', maxLength: 200 },
+              excerpt: { type: 'textarea', title: 'Extracto', maxLength: 300 },
+              content: { type: 'quill', title: 'Contenido' },
+            },
+          },
+          ru: {
+            type: 'object',
+            title: 'Русский (Russian)',
+            properties: {
+              title: { type: 'string', title: 'Заголовок', maxLength: 200 },
+              excerpt: { type: 'textarea', title: 'Выдержка', maxLength: 300 },
+              content: { type: 'quill', title: 'Содержание' },
+            },
+          },
+        },
+      },
     },
     required: ['title', 'slug', 'type', 'category', 'content', 'author'],
   },
