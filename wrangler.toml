@@ -23,11 +23,11 @@ database_id = "76d8fbcb-a3b3-478e-9460-3423f3b0eda4"
 migrations_dir = "./migrations"
 
 # =========================================
-# R2 存储 (需要在 Cloudflare Dashboard 启用)
+# R2 存储 (已启用)
 # =========================================
-# [[r2_buckets]]
-# binding = "MEDIA_BUCKET"
-# bucket_name = "gearlabgaming-media"
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "gearlabgaming-media"
 
 # =========================================
 # KV 缓存 (可选)
