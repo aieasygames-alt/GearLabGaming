@@ -37,16 +37,51 @@ const config: SonicJSConfig = {
 const coreApp = createSonicJSApp(config)
 
 // Create main app with custom routes
-const app = new Hono()
+const app = new Hono<{ Bindings: { DB: any } }>()
 
-// Helper: Fetch API data
-async function fetchAPI(url: string) {
-  try {
-    const response = await fetch(url)
-    return await response.json()
-  } catch (e) {
-    return null
+// Collection IDs
+const COLLECTIONS = {
+  products: 'col-products-ce613aa5',
+  articles: 'col-articles-f7a0326f',
+  categories: 'col-categories-d8563a2b',
+  authors: 'col-authors-c6c7e80c'
+}
+
+// Helper: Query content from D1 database
+async function getContent(db: any, collectionId: string, options: { limit?: number; slug?: string } = {}) {
+  let sql = 'SELECT * FROM content WHERE collection_id = ?'
+  const params: any[] = [collectionId]
+
+  if (options.slug) {
+    sql += ' AND slug = ?'
+    params.push(options.slug)
   }
+
+  sql += ' ORDER BY created_at DESC'
+
+  if (options.limit) {
+    sql += ' LIMIT ?'
+    params.push(options.limit)
+  }
+
+  const result = await db.prepare(sql).bind(...params).all()
+
+  return result.results.map((row: any) => ({
+    id: row.id,
+    title: row.title,
+    slug: row.slug,
+    status: row.status,
+    collectionId: row.collection_id,
+    data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data,
+    created_at: row.created_at,
+    updated_at: row.updated_at
+  }))
+}
+
+// Helper: Get single content by slug
+async function getContentBySlug(db: any, collectionId: string, slug: string) {
+  const results = await getContent(db, collectionId, { slug, limit: 1 })
+  return results[0] || null
 }
 
 // Helper: Common HTML wrapper
@@ -81,6 +116,17 @@ function wrapHTML(title: string, content: string) {
 </html>`
 }
 
+// Helper: Get category icon
+function getCategoryIcon(categoryId: string): string {
+  if (!categoryId) return '📦'
+  if (categoryId.includes('mice') || categoryId === 'cat-mice-001') return '🖱️'
+  if (categoryId.includes('keyboard') || categoryId === 'cat-keyboards-001') return '⌨️'
+  if (categoryId.includes('headset') || categoryId === 'cat-headsets-001') return '🎧'
+  if (categoryId.includes('monitor') || categoryId === 'cat-monitors-001') return '🖥️'
+  if (categoryId.includes('chair') || categoryId === 'cat-chairs-001') return '🪑'
+  return '📦'
+}
+
 // ============================================
 // HEALTH & API ENDPOINTS
 // ============================================
@@ -102,14 +148,15 @@ app.get('/api/info', (c) => {
 // ============================================
 
 app.get('/', async (c) => {
-  const siteUrl = 'https://gearlabgaming.com'
+  const db = c.env.DB
+
   const [products, articles, categories] = await Promise.all([
-    fetchAPI(`${siteUrl}/api/content?collection=products&limit=6`),
-    fetchAPI(`${siteUrl}/api/content?collection=articles&limit=3`),
-    fetchAPI(`${siteUrl}/api/content?collection=categories&limit=6`)
+    getContent(db, COLLECTIONS.products, { limit: 6 }),
+    getContent(db, COLLECTIONS.articles, { limit: 3 }),
+    getContent(db, COLLECTIONS.categories, { limit: 6 })
   ])
 
-  const productsHTML = products?.data?.map((p: any) => `
+  const productsHTML = products.map((p: any) => `
     <a href="/product/${p.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="aspect-video bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
       <div class="p-4">
@@ -123,7 +170,7 @@ app.get('/', async (c) => {
     </a>
   `).join('') || '<p class="col-span-3 text-gray-400">Loading products...</p>'
 
-  const articlesHTML = articles?.data?.map((a: any) => `
+  const articlesHTML = articles.map((a: any) => `
     <a href="/article/${a.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="h-32 bg-gradient-to-br from-purple-600 to-blue-600"></div>
       <div class="p-4">
@@ -134,7 +181,7 @@ app.get('/', async (c) => {
     </a>
   `).join('') || ''
 
-  const categoriesHTML = categories?.data?.map((cat: any) => `
+  const categoriesHTML = categories.map((cat: any) => `
     <a href="/category/${cat.data?.slug || cat.slug}" class="bg-gray-800 rounded-xl p-6 text-center hover:bg-gray-700 transition block">
       <div class="text-4xl mb-2">${cat.data?.icon || '📦'}</div>
       <div class="font-semibold">${cat.data?.name || cat.title}</div>
@@ -189,10 +236,10 @@ app.get('/', async (c) => {
 // ============================================
 
 app.get('/products', async (c) => {
-  const siteUrl = 'https://gearlabgaming.com'
-  const products = await fetchAPI(`${siteUrl}/api/content?collection=products&limit=50`)
+  const db = c.env.DB
+  const products = await getContent(db, COLLECTIONS.products, { limit: 50 })
 
-  const productsHTML = products?.data?.map((p: any) => `
+  const productsHTML = products.map((p: any) => `
     <a href="/product/${p.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="aspect-video bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
       <div class="p-4">
@@ -226,11 +273,8 @@ app.get('/products', async (c) => {
 
 app.get('/product/:slug', async (c) => {
   const slug = c.req.param('slug')
-  const siteUrl = 'https://gearlabgaming.com'
-
-  // SonicJS doesn't support filter by slug, so we get all and filter locally
-  const allProducts = await fetchAPI(`${siteUrl}/api/content?collection=products&limit=100`)
-  const p = allProducts?.data?.find((item: any) => item.slug === slug)
+  const db = c.env.DB
+  const p = await getContentBySlug(db, COLLECTIONS.products, slug)
 
   if (!p) {
     return c.html(wrapHTML('Product Not Found', `
@@ -339,10 +383,10 @@ app.get('/product/:slug', async (c) => {
 // ============================================
 
 app.get('/articles', async (c) => {
-  const siteUrl = 'https://gearlabgaming.com'
-  const articles = await fetchAPI(`${siteUrl}/api/content?collection=articles&limit=50`)
+  const db = c.env.DB
+  const articles = await getContent(db, COLLECTIONS.articles, { limit: 50 })
 
-  const articlesHTML = articles?.data?.map((a: any) => `
+  const articlesHTML = articles.map((a: any) => `
     <a href="/article/${a.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="h-40 bg-gradient-to-br from-purple-600 to-blue-600"></div>
       <div class="p-4">
@@ -372,11 +416,8 @@ app.get('/articles', async (c) => {
 
 app.get('/article/:slug', async (c) => {
   const slug = c.req.param('slug')
-  const siteUrl = 'https://gearlabgaming.com'
-
-  // SonicJS doesn't support filter by slug, so we get all and filter locally
-  const allArticles = await fetchAPI(`${siteUrl}/api/content?collection=articles&limit=100`)
-  const a = allArticles?.data?.find((item: any) => item.slug === slug)
+  const db = c.env.DB
+  const a = await getContentBySlug(db, COLLECTIONS.articles, slug)
 
   if (!a) {
     return c.html(wrapHTML('Article Not Found', `
@@ -425,10 +466,10 @@ app.get('/article/:slug', async (c) => {
 // ============================================
 
 app.get('/categories', async (c) => {
-  const siteUrl = 'https://gearlabgaming.com'
-  const categories = await fetchAPI(`${siteUrl}/api/content?collection=categories&limit=20`)
+  const db = c.env.DB
+  const categories = await getContent(db, COLLECTIONS.categories, { limit: 20 })
 
-  const categoriesHTML = categories?.data?.map((cat: any) => `
+  const categoriesHTML = categories.map((cat: any) => `
     <a href="/category/${cat.data?.slug || cat.slug}" class="bg-gray-800 rounded-xl p-8 text-center hover:bg-gray-700 transition block">
       <div class="text-6xl mb-4">${cat.data?.icon || '📦'}</div>
       <h3 class="text-xl font-bold mb-2">${cat.data?.name || cat.title}</h3>
@@ -452,26 +493,33 @@ app.get('/categories', async (c) => {
 
 app.get('/category/:slug', async (c) => {
   const slug = c.req.param('slug')
-  const siteUrl = 'https://gearlabgaming.com'
+  const db = c.env.DB
 
-  // SonicJS doesn't support filter by slug, so we get all and filter locally
-  const [allCategories, productsData] = await Promise.all([
-    fetchAPI(`${siteUrl}/api/content?collection=categories&limit=100`),
-    fetchAPI(`${siteUrl}/api/content?collection=products&limit=100`)
-  ])
-
-  const category = allCategories?.data?.find((cat: any) =>
+  // Get all categories and find the one matching the slug
+  const allCategories = await getContent(db, COLLECTIONS.categories, { limit: 100 })
+  const category = allCategories.find((cat: any) =>
     cat.data?.slug === slug || cat.slug === slug
   )
-  const catId = category?.id
-  const catName = category?.data?.name || category?.title || slug
 
-  // Filter products by category
-  const filteredProducts = productsData?.data?.filter((p: any) => {
+  if (!category) {
+    return c.html(wrapHTML('Category Not Found', `
+      <section class="py-20 px-4 text-center">
+        <h1 class="text-4xl font-bold mb-4">Category Not Found</h1>
+        <a href="/categories" class="text-purple-400">← Back to Categories</a>
+      </section>
+    `))
+  }
+
+  const catId = category.id
+  const catName = category.data?.name || category.title || slug
+
+  // Get all products and filter by category
+  const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
+  const filteredProducts = allProducts.filter((p: any) => {
     return p.data?.category === catId || p.data?.category?.includes(slug)
   })
 
-  const productsHTML = filteredProducts?.map((p: any) => `
+  const productsHTML = filteredProducts.map((p: any) => `
     <a href="/product/${p.slug}" class="bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="aspect-video bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
       <div class="p-4">
@@ -490,29 +538,18 @@ app.get('/category/:slug', async (c) => {
       <div class="max-w-7xl mx-auto">
         <a href="/categories" class="text-purple-400 mb-4 inline-block">← All Categories</a>
         <div class="flex items-center gap-4 mb-8">
-          <span class="text-5xl">${category?.data?.icon || '📦'}</span>
+          <span class="text-5xl">${category.data?.icon || '📦'}</span>
           <div>
             <h1 class="text-3xl font-bold">${catName}</h1>
-            <p class="text-gray-400 mt-1">${category?.data?.description || ''}</p>
+            <p class="text-gray-400 mt-1">${category.data?.description || ''}</p>
           </div>
         </div>
-        <h2 class="text-xl font-bold mb-6">${filteredProducts?.length || 0} Products</h2>
+        <h2 class="text-xl font-bold mb-6">${filteredProducts.length} Products</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${productsHTML}</div>
       </div>
     </section>
   `))
 })
-
-// Helper: Get category icon
-function getCategoryIcon(categoryId: string): string {
-  if (!categoryId) return '📦'
-  if (categoryId.includes('mice') || categoryId === 'cat-mice-001') return '🖱️'
-  if (categoryId.includes('keyboard') || categoryId === 'cat-keyboards-001') return '⌨️'
-  if (categoryId.includes('headset') || categoryId === 'cat-headsets-001') return '🎧'
-  if (categoryId.includes('monitor') || categoryId === 'cat-monitors-001') return '🖥️'
-  if (categoryId.includes('chair') || categoryId === 'cat-chairs-001') return '🪑'
-  return '📦'
-}
 
 // Mount core app (catch-all)
 app.route('/', coreApp)
