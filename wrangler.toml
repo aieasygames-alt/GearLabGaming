@@ -45,10 +45,28 @@ SITE_NAME = "GearLabGaming"
 SITE_URL = "https://gearlabgaming.com"
 
 # =========================================
+# 自定义域名路由
+# =========================================
+# 需要域名 gearlabgaming.com 已添加到 Cloudflare
+# 然后取消注释以下配置并重新部署
+
+# [[routes]]
+# pattern = "gearlabgaming.com/*"
+# zone_name = "gearlabgaming.com"
+
+# [[routes]]
+# pattern = "www.gearlabgaming.com/*"
+# zone_name = "gearlabgaming.com"
+
+# =========================================
 # 生产环境配置
 # =========================================
 [env.production]
 workers_dev = false
+routes = [
+  { pattern = "gearlabgaming.com/*", zone_name = "gearlabgaming.com" },
+  { pattern = "www.gearlabgaming.com/*", zone_name = "gearlabgaming.com" }
+]
 [env.production.vars]
 ENVIRONMENT = "production"
 SITE_URL = "https://gearlabgaming.com"

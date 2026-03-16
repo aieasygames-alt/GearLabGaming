@@ -28,8 +28,8 @@ const config: SonicJSConfig = {
     autoSync: true
   },
   plugins: {
-    autoLoad: false,
-    disableAll: true
+    autoLoad: true,
+    disableAll: false
   }
 }
 
