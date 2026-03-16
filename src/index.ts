@@ -547,11 +547,8 @@ app.get('/api/info', (c) => {
 // LOCALIZED HOMEPAGE
 // ============================================
 
-app.get('/:lang', async (c) => {
+app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
   const lang = c.req.param('lang')
-  if (!isValidLocale(lang)) {
-    return c.redirect('/')
-  }
   const locale: Locale = lang
   const db = c.env.DB
 
@@ -646,9 +643,8 @@ app.get('/:lang', async (c) => {
 // LOCALIZED PRODUCTS LIST
 // ============================================
 
-app.get('/:lang/products', async (c) => {
+app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
   const lang = c.req.param('lang')
-  if (!isValidLocale(lang)) return c.redirect('/')
   const locale: Locale = lang
   const db = c.env.DB
   const products = await getContent(db, COLLECTIONS.products, { limit: 50 })
@@ -687,9 +683,8 @@ app.get('/:lang/products', async (c) => {
 // LOCALIZED PRODUCT DETAIL
 // ============================================
 
-app.get('/:lang/product/:slug', async (c) => {
+app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const lang = c.req.param('lang')
-  if (!isValidLocale(lang)) return c.redirect('/')
   const locale: Locale = lang
   const slug = c.req.param('slug')
   const db = c.env.DB
@@ -802,9 +797,8 @@ app.get('/:lang/product/:slug', async (c) => {
 // LOCALIZED ARTICLES LIST
 // ============================================
 
-app.get('/:lang/articles', async (c) => {
+app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
   const lang = c.req.param('lang')
-  if (!isValidLocale(lang)) return c.redirect('/')
   const locale: Locale = lang
   const db = c.env.DB
   const articles = await getContent(db, COLLECTIONS.articles, { limit: 50 })
@@ -839,9 +833,8 @@ app.get('/:lang/articles', async (c) => {
 // LOCALIZED ARTICLE DETAIL
 // ============================================
 
-app.get('/:lang/article/:slug', async (c) => {
+app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
   const lang = c.req.param('lang')
-  if (!isValidLocale(lang)) return c.redirect('/')
   const locale: Locale = lang
   const slug = c.req.param('slug')
   const db = c.env.DB
@@ -895,9 +888,8 @@ app.get('/:lang/article/:slug', async (c) => {
 // LOCALIZED CATEGORIES LIST
 // ============================================
 
-app.get('/:lang/categories', async (c) => {
+app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
   const lang = c.req.param('lang')
-  if (!isValidLocale(lang)) return c.redirect('/')
   const locale: Locale = lang
   const db = c.env.DB
   const categories = await getContent(db, COLLECTIONS.categories, { limit: 20 })
@@ -926,9 +918,8 @@ app.get('/:lang/categories', async (c) => {
 // LOCALIZED CATEGORY DETAIL
 // ============================================
 
-app.get('/:lang/category/:slug', async (c) => {
+app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   const lang = c.req.param('lang')
-  if (!isValidLocale(lang)) return c.redirect('/')
   const locale: Locale = lang
   const slug = c.req.param('slug')
   const db = c.env.DB
