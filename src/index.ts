@@ -14,13 +14,17 @@ import categoriesCollection from './collections/categories.collection'
 import productsCollection from './collections/products.collection'
 import articlesCollection from './collections/articles.collection'
 import authorsCollection from './collections/authors.collection'
+import priceHistoryCollection from './collections/price-history.collection'
+import commentsCollection from './collections/comments.collection'
 
 // Register all custom collections
 registerCollections([
   categoriesCollection,
   productsCollection,
   articlesCollection,
-  authorsCollection
+  authorsCollection,
+  priceHistoryCollection,
+  commentsCollection
 ])
 
 // Application configuration
@@ -153,6 +157,35 @@ const TRANSLATIONS: Record<Locale, any> = {
     },
     footer: {
       copyright: '© 2026 GearLabGaming. All rights reserved.'
+    },
+    priceHistory: {
+      title: 'Price History',
+      current: 'Current Price',
+      lowest: 'Lowest',
+      highest: 'Highest',
+      average: 'Average',
+      lastUpdate: 'Last updated',
+      noData: 'No price history available'
+    },
+    comments: {
+      title: 'Comments',
+      add: 'Add a Comment',
+      submit: 'Submit',
+      name: 'Name',
+      email: 'Email',
+      content: 'Your Comment',
+      rating: 'Rating',
+      noComments: 'No comments yet',
+      login: 'Login to comment',
+      pending: 'Your comment is pending approval',
+      success: 'Comment added successfully'
+    },
+    wishlist: {
+      title: 'Wishlist',
+      add: 'Add to Wishlist',
+      remove: 'Remove from Wishlist',
+      empty: 'Your wishlist is empty',
+      view: 'View Wishlist'
     }
   },
   zh: {
@@ -250,6 +283,35 @@ const TRANSLATIONS: Record<Locale, any> = {
     },
     footer: {
       copyright: '© 2026 GearLabGaming. 保留所有权利。'
+    },
+    priceHistory: {
+      title: '价格历史',
+      current: '当前价格',
+      lowest: '最低',
+      highest: '最高',
+      average: '平均',
+      lastUpdate: '最后更新',
+      noData: '暂无价格历史数据'
+    },
+    comments: {
+      title: '评论',
+      add: '添加评论',
+      submit: '提交',
+      name: '姓名',
+      email: '邮箱',
+      content: '评论内容',
+      rating: '评分',
+      noComments: '暂无评论',
+      login: '登录后评论',
+      pending: '您的评论正在等待审核',
+      success: '评论添加成功'
+    },
+    wishlist: {
+      title: '愿望清单',
+      add: '加入愿望清单',
+      remove: '移出愿望清单',
+      empty: '您的愿望清单为空',
+      view: '查看愿望清单'
     }
   },
   fr: {
@@ -347,6 +409,35 @@ const TRANSLATIONS: Record<Locale, any> = {
     },
     footer: {
       copyright: '© 2026 GearLabGaming. Tous droits réservés.'
+    },
+    priceHistory: {
+      title: 'Historique des prix',
+      current: 'Prix actuel',
+      lowest: 'Plus bas',
+      highest: 'Plus élevé',
+      average: 'Moyenne',
+      lastUpdate: 'Dernière mise à jour',
+      noData: 'Aucun historique de prix disponible'
+    },
+    comments: {
+      title: 'Commentaires',
+      add: 'Ajouter un commentaire',
+      submit: 'Envoyer',
+      name: 'Nom',
+      email: 'Email',
+      content: 'Votre commentaire',
+      rating: 'Note',
+      noComments: 'Aucun commentaire pour le moment',
+      login: 'Connectez-vous pour commenter',
+      pending: 'Votre commentaire est en attente de modération',
+      success: 'Commentaire ajouté avec succès'
+    },
+    wishlist: {
+      title: 'Liste de souhaits',
+      add: 'Ajouter à la liste',
+      remove: 'Retirer de la liste',
+      empty: 'Votre liste est vide',
+      view: 'Voir la liste'
     }
   },
   es: {
@@ -444,6 +535,35 @@ const TRANSLATIONS: Record<Locale, any> = {
     },
     footer: {
       copyright: '© 2026 GearLabGaming. Todos los derechos reservados.'
+    },
+    priceHistory: {
+      title: 'Historial de precios',
+      current: 'Precio actual',
+      lowest: 'Más bajo',
+      highest: 'Más alto',
+      average: 'Promedio',
+      lastUpdate: 'Última actualización',
+      noData: 'No hay historial de precios disponible'
+    },
+    comments: {
+      title: 'Comentarios',
+      add: 'Añadir comentario',
+      submit: 'Enviar',
+      name: 'Nombre',
+      email: 'Correo electrónico',
+      content: 'Tu comentario',
+      rating: 'Puntuación',
+      noComments: 'Aún no hay comentarios',
+      login: 'Inicia sesión para comentar',
+      pending: 'Tu comentario está pendiente de aprobación',
+      success: 'Comentario añadido con éxito'
+    },
+    wishlist: {
+      title: 'Lista de deseos',
+      add: 'Añadir a la lista',
+      remove: 'Eliminar de la lista',
+      empty: 'Tu lista está vacía',
+      view: 'Ver lista de deseos'
     }
   },
   ru: {
@@ -541,6 +661,35 @@ const TRANSLATIONS: Record<Locale, any> = {
     },
     footer: {
       copyright: '© 2026 GearLabGaming. Все права защищены.'
+    },
+    priceHistory: {
+      title: 'История цен',
+      current: 'Текущая цена',
+      lowest: 'Минимум',
+      highest: 'Максимум',
+      average: 'Среднее',
+      lastUpdate: 'Последнее обновление',
+      noData: 'История цен недоступна'
+    },
+    comments: {
+      title: 'Комментарии',
+      add: 'Добавить комментарий',
+      submit: 'Отправить',
+      name: 'Имя',
+      email: 'Эл. почта',
+      content: 'Ваш комментарий',
+      rating: 'Оценка',
+      noComments: 'Пока нет комментариев',
+      login: 'Войдите, чтобы комментировать',
+      pending: 'Ваш комментарий ожидает проверки',
+      success: 'Комментарий добавлен'
+    },
+    wishlist: {
+      title: 'Список желаний',
+      add: 'Добавить в список',
+      remove: 'Удалить из списка',
+      empty: 'Ваш список пуст',
+      view: 'Просмотреть список'
     }
   }
 }
@@ -550,7 +699,9 @@ const COLLECTIONS = {
   products: 'col-products-ce613aa5',
   articles: 'col-articles-f7a0326f',
   categories: 'col-categories-d8563a2b',
-  authors: 'col-authors-5dc12aff'
+  authors: 'col-authors-5dc12aff',
+  priceHistory: 'col-price-history', // Will be assigned after sync
+  comments: 'col-comments' // Will be assigned after sync
 }
 
 // ============================================
@@ -1821,13 +1972,128 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             </div>
 
             <!-- Buy Links -->
-            <div class="flex gap-4">
+            <div class="flex gap-4 mb-6">
               ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold">${t(locale, 'detail.buyAmazon')}</a>` : ''}
               ${p.data?.affiliateLinks?.official ? `<a href="${p.data.affiliateLinks.official}" target="_blank" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">${t(locale, 'detail.buyDirect')}</a>` : ''}
+              <button onclick="toggleWishlist('${p.id}')" id="wishlist-btn-${p.id}" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">❤️ ${t(locale, 'wishlist.add')}</button>
+            </div>
+
+            <!-- Price History -->
+            <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
+              <h2 class="text-xl font-bold mb-4">${t(locale, 'priceHistory.title')}</h2>
+              <div id="price-history-chart" class="h-48 flex items-center justify-center text-gray-400">
+                ${t(locale, 'priceHistory.noData')}
+              </div>
+            </div>
+
+            <!-- Comments Section -->
+            <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6">
+              <h2 class="text-xl font-bold mb-4">${t(locale, 'comments.title')}</h2>
+              <div id="comments-list" class="space-y-4 mb-6">
+                <p class="text-gray-400">${t(locale, 'comments.noComments')}</p>
+              </div>
+              <form id="comment-form" class="space-y-4">
+                <h3 class="font-bold">${t(locale, 'comments.add')}</h3>
+                <input type="text" name="name" placeholder="${t(locale, 'comments.name')}" required class="w-full px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 outline-none">
+                <input type="email" name="email" placeholder="${t(locale, 'comments.email')}" class="w-full px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 outline-none">
+                <select name="rating" class="w-full px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 outline-none">
+                  <option value="5">⭐⭐⭐⭐⭐ 5</option>
+                  <option value="4">⭐⭐⭐⭐ 4</option>
+                  <option value="3">⭐⭐⭐ 3</option>
+                  <option value="2">⭐⭐ 2</option>
+                  <option value="1">⭐ 1</option>
+                </select>
+                <textarea name="content" placeholder="${t(locale, 'comments.content')}" required rows="3" class="w-full px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-purple-500 outline-none"></textarea>
+                <button type="submit" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold">${t(locale, 'comments.submit')}</button>
+              </form>
             </div>
           </div>
         </div>
       </div>
+
+      <script>
+        // Wishlist functionality
+        function toggleWishlist(productId) {
+          let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+          const index = wishlist.indexOf(productId);
+          if (index > -1) {
+            wishlist.splice(index, 1);
+            document.getElementById('wishlist-btn-' + productId).textContent = '❤️ ${t(locale, 'wishlist.add')}';
+          } else {
+            wishlist.push(productId);
+            document.getElementById('wishlist-btn-' + productId).textContent = '💖 ${t(locale, 'wishlist.remove')}';
+          }
+          localStorage.setItem('wishlist', JSON.stringify(wishlist));
+        }
+
+        // Initialize wishlist button
+        (function() {
+          let wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
+          if (wishlist.includes('${p.id}')) {
+            document.getElementById('wishlist-btn-${p.id}').textContent = '💖 ${t(locale, 'wishlist.remove')}';
+          }
+
+          // Load price history
+          fetch('/api/price-history/${p.id}')
+            .then(r => r.json())
+            .then(data => {
+              if (data.success && data.data.length > 0) {
+                const prices = data.data.map(d => d.price).reverse();
+                const min = Math.min(...prices);
+                const max = Math.max(...prices);
+                const avg = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
+                document.getElementById('price-history-chart').innerHTML = \`
+                  <div class="grid grid-cols-3 gap-4 text-center">
+                    <div><div class="text-2xl font-bold text-green-400">\$\${min}</div><div class="text-sm text-gray-400">${t(locale, 'priceHistory.lowest')}</div></div>
+                    <div><div class="text-2xl font-bold">\$\${avg}</div><div class="text-sm text-gray-400">${t(locale, 'priceHistory.average')}</div></div>
+                    <div><div class="text-2xl font-bold text-red-400">\$\${max}</div><div class="text-sm text-gray-400">${t(locale, 'priceHistory.highest')}</div></div>
+                  </div>
+                \`;
+              }
+            });
+
+          // Load comments
+          fetch('/api/comments/product/${p.id}')
+            .then(r => r.json())
+            .then(data => {
+              if (data.success && data.data.length > 0) {
+                document.getElementById('comments-list').innerHTML = data.data.map(c => \`
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="font-bold">\${JSON.parse(c.author).name}</span>
+                      <span class="text-yellow-400">\${'⭐'.repeat(c.rating || 0)}</span>
+                    </div>
+                    <p class="text-gray-300">\${c.content}</p>
+                  </div>
+                \`).join('');
+              }
+            });
+
+          // Submit comment
+          document.getElementById('comment-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('/api/comments', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                product: '${p.id}',
+                author: { name: formData.get('name'), email: formData.get('email') },
+                content: formData.get('content'),
+                rating: parseInt(formData.get('rating'))
+              })
+            })
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                alert('${t(locale, 'comments.success')}');
+                this.reset();
+                location.reload();
+              }
+            });
+          });
+        })();
+      </script>
     </section>
   `, locale, `/${locale}/product/${slug}`))
 })
@@ -2020,6 +2286,86 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
       </div>
     </section>
   `, locale, `/${locale}/category/${slug}`))
+})
+
+// ============================================
+// PRICE HISTORY API
+// ============================================
+
+app.get('/api/price-history/:productId', async (c) => {
+  const productId = c.req.param('productId')
+  const db = c.env.DB
+
+  try {
+    const priceHistory = await db.prepare(`
+      SELECT * FROM price_history
+      WHERE product_id = ?
+      ORDER BY created_at DESC
+      LIMIT 90
+    `).bind(productId).all()
+
+    return c.json({
+      success: true,
+      data: priceHistory.results || []
+    })
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch price history' }, 500)
+  }
+})
+
+// ============================================
+// COMMENTS API
+// ============================================
+
+app.get('/api/comments/:contentType/:contentId', async (c) => {
+  const contentType = c.req.param('contentType') // 'product' or 'article'
+  const contentId = c.req.param('contentId')
+  const db = c.env.DB
+
+  try {
+    const comments = await db.prepare(`
+      SELECT * FROM comments
+      WHERE ${contentType}_id = ? AND status = 'approved'
+      ORDER BY created_at DESC
+    `).bind(contentId).all()
+
+    return c.json({
+      success: true,
+      data: comments.results || []
+    })
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to fetch comments' }, 500)
+  }
+})
+
+app.post('/api/comments', async (c) => {
+  const db = c.env.DB
+  try {
+    const body = await c.req.json()
+    const { product, article, author, content, rating } = body
+
+    if (!content || !author?.name) {
+      return c.json({ success: false, error: 'Missing required fields' }, 400)
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO comments (product_id, article_id, author, content, rating, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 'approved', datetime('now'), datetime('now'))
+    `).bind(
+      product || null,
+      article || null,
+      JSON.stringify(author),
+      content,
+      rating || null
+    ).run()
+
+    return c.json({
+      success: true,
+      data: { id: result.meta.last_row_id }
+    })
+  } catch (error) {
+    return c.json({ success: false, error: 'Failed to create comment' }, 500)
+  }
 })
 
 // Static assets routes (served from R2)
