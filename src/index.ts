@@ -227,9 +227,11 @@ app.get('/products', async (c) => {
 app.get('/product/:slug', async (c) => {
   const slug = c.req.param('slug')
   const siteUrl = 'https://gearlabgaming.com'
-  const product = await fetchAPI(`${siteUrl}/api/content?collection=products&filter[slug][eq]=${slug}&limit=1`)
 
-  const p = product?.data?.[0]
+  // SonicJS doesn't support filter by slug, so we get all and filter locally
+  const allProducts = await fetchAPI(`${siteUrl}/api/content?collection=products&limit=100`)
+  const p = allProducts?.data?.find((item: any) => item.slug === slug)
+
   if (!p) {
     return c.html(wrapHTML('Product Not Found', `
       <section class="py-20 px-4 text-center">
@@ -371,9 +373,11 @@ app.get('/articles', async (c) => {
 app.get('/article/:slug', async (c) => {
   const slug = c.req.param('slug')
   const siteUrl = 'https://gearlabgaming.com'
-  const article = await fetchAPI(`${siteUrl}/api/content?collection=articles&filter[slug][eq]=${slug}&limit=1`)
 
-  const a = article?.data?.[0]
+  // SonicJS doesn't support filter by slug, so we get all and filter locally
+  const allArticles = await fetchAPI(`${siteUrl}/api/content?collection=articles&limit=100`)
+  const a = allArticles?.data?.find((item: any) => item.slug === slug)
+
   if (!a) {
     return c.html(wrapHTML('Article Not Found', `
       <section class="py-20 px-4 text-center">
@@ -450,13 +454,15 @@ app.get('/category/:slug', async (c) => {
   const slug = c.req.param('slug')
   const siteUrl = 'https://gearlabgaming.com'
 
-  // Get category and products
-  const [catData, productsData] = await Promise.all([
-    fetchAPI(`${siteUrl}/api/content?collection=categories&filter[data.slug][eq]=${slug}&limit=1`),
-    fetchAPI(`${siteUrl}/api/content?collection=products&limit=50`)
+  // SonicJS doesn't support filter by slug, so we get all and filter locally
+  const [allCategories, productsData] = await Promise.all([
+    fetchAPI(`${siteUrl}/api/content?collection=categories&limit=100`),
+    fetchAPI(`${siteUrl}/api/content?collection=products&limit=100`)
   ])
 
-  const category = catData?.data?.[0]
+  const category = allCategories?.data?.find((cat: any) =>
+    cat.data?.slug === slug || cat.slug === slug
+  )
   const catId = category?.id
   const catName = category?.data?.name || category?.title || slug
 
