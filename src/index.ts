@@ -129,7 +129,16 @@ const TRANSLATIONS: Record<Locale, any> = {
       quickVerdict: 'Quick Verdict',
       contentSoon: 'Content coming soon...',
       productsCount: 'Products',
-      noProducts: 'No products in this category yet.'
+      noProducts: 'No products in this category yet.',
+      share: 'Share',
+      tags: 'Tags',
+      toc: 'Table of Contents',
+      featuredProducts: 'Featured Products',
+      topPicks: 'Top Picks',
+      viewAllArticles: 'View all articles',
+      relatedArticles: 'Related Articles',
+      loading: 'Loading...',
+      aboutAuthor: 'About the Author'
     },
     search: {
       title: 'Search',
@@ -255,7 +264,16 @@ const TRANSLATIONS: Record<Locale, any> = {
       quickVerdict: '快速结论',
       contentSoon: '内容即将推出...',
       productsCount: '个产品',
-      noProducts: '该分类暂无产品。'
+      noProducts: '该分类暂无产品。',
+      share: '分享',
+      tags: '标签',
+      toc: '目录',
+      featuredProducts: '精选产品',
+      topPicks: '首选推荐',
+      viewAllArticles: '查看所有文章',
+      relatedArticles: '相关文章',
+      loading: '加载中...',
+      aboutAuthor: '关于作者'
     },
     search: {
       title: '搜索',
@@ -2225,34 +2243,270 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
 
   const localized = getLocalizedContent(a, locale)
 
+  // Get author info
+  let author: any = null
+  if (a.data?.author) {
+    const authorResult = await db.prepare(`
+      SELECT * FROM content WHERE id = ? AND collection_id = ?
+    `).bind(a.data.author, COLLECTIONS.authors).first()
+    if (authorResult) {
+      author = {
+        name: authorResult.title,
+        bio: typeof authorResult.data === 'string' ? JSON.parse(authorResult.data).bio : authorResult.data?.bio,
+        avatar: typeof authorResult.data === 'string' ? JSON.parse(authorResult.data).avatar : authorResult.data?.avatar
+      }
+    }
+  }
+
+  // Default author if not found
+  if (!author) {
+    author = { name: 'GearLabGaming Team', bio: 'Expert gaming gear reviewers', avatar: null }
+  }
+
+  // Get featured products
+  let featuredProducts: any[] = []
+  if (a.data?.featuredProducts && a.data.featuredProducts.length > 0) {
+    const productIds = a.data.featuredProducts.map((fp: any) => fp.productId)
+    const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
+    featuredProducts = allProducts.filter((p: any) => productIds.includes(p.id))
+  }
+
+  // Generate TOC from content headings
+  const content = localized.data?.content || ''
+  const tocItems: { level: number; text: string; id: string }[] = []
+  const contentWithIds = content.replace(/<h([2-4])>(.*?)<\/h\1>/g, (match: string, level: string, text: string) => {
+    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    tocItems.push({ level: parseInt(level), text: text.replace(/<[^>]+>/g, ''), id })
+    return `<h${level} id="${id}">${text}</h${level}>`
+  })
+
+  // Article tags
+  const tags = a.data?.seo?.keywords?.split(',').map((k: string) => k.trim()).slice(0, 5) || []
+
+  // Article type badge
+  const typeBadge: Record<string, string> = {
+    'list': '📋 List',
+    'comparison': '⚖️ Comparison',
+    'guide': '📚 Guide',
+    'review': '⭐ Review',
+    'news': '📰 News'
+  }
+
   return c.html(wrapHTML(localized.title, `
     <article class="py-12 px-4">
-      <div class="max-w-3xl mx-auto">
-        <a href="/${locale}/articles" class="text-purple-400 mb-4 inline-block">${t(locale, 'detail.backArticles')}</a>
+      <div class="max-w-4xl mx-auto">
+        <!-- Breadcrumb -->
+        <nav class="mb-6 text-sm">
+          <a href="/${locale}" class="text-gray-400 hover:text-purple-400">${t(locale, 'nav.home')}</a>
+          <span class="mx-2 text-gray-600">/</span>
+          <a href="/${locale}/articles" class="text-gray-400 hover:text-purple-400">${t(locale, 'nav.articles')}</a>
+          <span class="mx-2 text-gray-600">/</span>
+          <span class="text-gray-300">${localized.title.substring(0, 50)}...</span>
+        </nav>
 
-        <header class="mb-8">
-          <span class="text-purple-400 uppercase text-sm font-medium">${a.data?.type || 'article'}</span>
-          <h1 class="text-4xl font-bold mt-2 mb-4">${localized.title}</h1>
-          <p class="text-xl text-gray-400">${localized.data?.excerpt || ''}</p>
-          <div class="flex items-center gap-4 mt-4 text-sm text-gray-500">
-            <span>${a.data?.readingTime || 5} ${t(locale, 'articles.minRead')}</span>
-            <span>•</span>
-            <span>${t(locale, 'detail.updated')} ${new Date(a.updated_at || a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale)}</span>
+        <!-- Article Header -->
+        <header class="mb-10">
+          <!-- Type Badge -->
+          <div class="mb-4">
+            <span class="inline-block px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm font-medium">
+              ${typeBadge[a.data?.type] || '📄 Article'}
+            </span>
+            ${a.data?.featured ? '<span class="ml-2 inline-block px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-sm font-medium">⭐ Featured</span>' : ''}
+          </div>
+
+          <!-- Title -->
+          <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">${localized.title}</h1>
+
+          <!-- Excerpt -->
+          <p class="text-xl text-gray-400 mb-6 leading-relaxed">${localized.data?.excerpt || ''}</p>
+
+          <!-- Meta Info -->
+          <div class="flex flex-wrap items-center gap-6 text-sm text-gray-500 border-b border-gray-700 pb-6">
+            <!-- Author -->
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
+                ${author.avatar ? `<img src="${author.avatar}" class="w-full h-full rounded-full object-cover">` : author.name.charAt(0)}
+              </div>
+              <div>
+                <div class="text-white font-medium">${author.name}</div>
+                <div class="text-xs">${author.bio || 'Expert Reviewer'}</div>
+              </div>
+            </div>
+
+            <span class="text-gray-600">|</span>
+
+            <!-- Reading Time -->
+            <div class="flex items-center gap-2">
+              <span>📖</span>
+              <span>${a.data?.readingTime || 5} ${t(locale, 'articles.minRead')}</span>
+            </div>
+
+            <span class="text-gray-600">|</span>
+
+            <!-- Date -->
+            <div class="flex items-center gap-2">
+              <span>📅</span>
+              <span>${new Date(a.created_at * 1000 || a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+            </div>
+
+            <span class="text-gray-600">|</span>
+
+            <!-- Updated -->
+            <div class="flex items-center gap-2">
+              <span>🔄</span>
+              <span>${t(locale, 'detail.updated')} ${new Date(a.updated_at * 1000 || a.updated_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale, { month: 'short', day: 'numeric' })}</span>
+            </div>
+          </div>
+
+          <!-- Share Buttons -->
+          <div class="flex items-center gap-4 mt-6">
+            <span class="text-sm text-gray-400">${t(locale, 'detail.share')}:</span>
+            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(localized.title)}&url=${encodeURIComponent('https://gearlabgaming.com/' + locale + '/article/' + slug)}" target="_blank" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Twitter">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://gearlabgaming.com/' + locale + '/article/' + slug)}" target="_blank" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Facebook">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+            <button onclick="navigator.clipboard.writeText(window.location.href)" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Copy Link">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </button>
           </div>
         </header>
 
-        <div class="bg-white dark:bg-gray-800 rounded-xl p-8">
-          <div class="prose prose-invert max-w-none">
-            ${localized.data?.content || `<p class="text-gray-400">${t(locale, 'detail.contentSoon')}</p>`}
+        <!-- Two Column Layout -->
+        <div class="lg:grid lg:grid-cols-[1fr_280px] lg:gap-12">
+          <!-- Main Content -->
+          <div>
+            <!-- Quick Verdict Box (if exists) -->
+            ${a.data?.quickVerdict ? `
+            <div class="bg-gradient-to-r from-purple-900/50 to-blue-900/50 border border-purple-500/30 rounded-xl p-6 mb-8">
+              <h2 class="text-lg font-bold mb-3 flex items-center gap-2">
+                <span>⚡</span> ${t(locale, 'detail.quickVerdict')}
+              </h2>
+              <p class="text-gray-300 mb-4">${a.data.quickVerdict.summary || ''}</p>
+              ${featuredProducts.length > 0 ? `
+              <div class="flex flex-wrap gap-2">
+                <span class="text-sm text-gray-400">${t(locale, 'detail.topPicks')}:</span>
+                ${featuredProducts.slice(0, 3).map((p: any, i: number) => `
+                  <a href="/${locale}/product/${p.slug}" class="text-purple-400 hover:text-purple-300 text-sm">${i === 0 ? '🏆 ' : ''}${p.title}</a>
+                `).join('<span class="text-gray-600">•</span>')}
+              </div>
+              ` : ''}
+            </div>
+            ` : ''}
+
+            <!-- Article Content -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 md:p-10 shadow-lg">
+              <div class="prose prose-lg dark:prose-invert max-w-none
+                prose-headings:text-white prose-headings:font-bold
+                prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-700
+                prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+                prose-h4:text-lg prose-h4:mt-6 prose-h4:mb-2
+                prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-4
+                prose-a:text-purple-400 prose-a:no-underline hover:prose-a:text-purple-300
+                prose-strong:text-white prose-strong:font-semibold
+                prose-ul:my-4 prose-ol:my-4
+                prose-li:text-gray-300 prose-li:my-1
+                prose-blockquote:border-l-4 prose-blockquote:border-purple-500 prose-blockquote:bg-purple-900/20 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r
+                prose-code:bg-gray-700 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-purple-300
+                prose-pre:bg-gray-900 prose-pre:border prose-pre:border-gray-700
+                prose-img:rounded-xl prose-img:shadow-lg
+                prose-table:border-collapse
+                prose-th:bg-gray-700 prose-th:text-white prose-th:p-3
+                prose-td:border prose-td:border-gray-700 prose-td:p-3
+              ">
+                ${contentWithIds || `<p class="text-gray-400">${t(locale, 'detail.contentSoon')}</p>`}
+              </div>
+            </div>
+
+            <!-- Tags -->
+            ${tags.length > 0 ? `
+            <div class="mt-8">
+              <h3 class="text-sm font-medium text-gray-400 mb-3">${t(locale, 'detail.tags')}</h3>
+              <div class="flex flex-wrap gap-2">
+                ${tags.map((tag: string) => `
+                  <a href="/${locale}/search?q=${encodeURIComponent(tag)}" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm text-gray-300 transition">
+                    #${tag}
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
+
+            <!-- Author Bio Card -->
+            <div class="mt-10 p-6 bg-gray-800/50 rounded-xl border border-gray-700">
+              <div class="flex items-start gap-4">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+                  ${author.avatar ? `<img src="${author.avatar}" class="w-full h-full rounded-full object-cover">` : author.name.charAt(0)}
+                </div>
+                <div>
+                  <h3 class="font-bold text-lg">${author.name}</h3>
+                  <p class="text-gray-400 text-sm mt-1">${author.bio || 'Expert gaming gear reviewer with years of experience testing the latest peripherals.'}</p>
+                  <div class="flex gap-4 mt-3">
+                    <a href="/${locale}/articles?author=${encodeURIComponent(author.name)}" class="text-purple-400 text-sm hover:text-purple-300">
+                      ${t(locale, 'detail.viewAllArticles')} →
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- Sidebar -->
+          <aside class="hidden lg:block">
+            <!-- Table of Contents -->
+            ${tocItems.length > 0 ? `
+            <div class="sticky top-8 bg-gray-800/50 rounded-xl border border-gray-700 p-6 mb-6">
+              <h3 class="font-bold mb-4 flex items-center gap-2">
+                <span>📑</span> ${t(locale, 'detail.toc')}
+              </h3>
+              <nav class="space-y-2 text-sm">
+                ${tocItems.map(item => `
+                  <a href="#${item.id}" class="block py-1 ${item.level === 2 ? 'text-gray-300' : item.level === 3 ? 'text-gray-400 pl-4' : 'text-gray-500 pl-8'} hover:text-purple-400 transition">
+                    ${item.text}
+                  </a>
+                `).join('')}
+              </nav>
+            </div>
+            ` : ''}
+
+            <!-- Featured Products -->
+            ${featuredProducts.length > 0 ? `
+            <div class="bg-gray-800/50 rounded-xl border border-gray-700 p-6">
+              <h3 class="font-bold mb-4 flex items-center gap-2">
+                <span>🎮</span> ${t(locale, 'detail.featuredProducts')}
+              </h3>
+              <div class="space-y-4">
+                ${featuredProducts.slice(0, 3).map((p: any) => `
+                  <a href="/${locale}/product/${p.slug}" class="block p-3 bg-gray-700/50 hover:bg-gray-700 rounded-lg transition">
+                    <div class="flex items-center gap-3">
+                      <div class="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center text-2xl">
+                        ${getCategoryIcon(p.data?.category)}
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-sm truncate">${p.title}</div>
+                        <div class="text-purple-400 text-sm font-bold">$${p.data?.price}</div>
+                      </div>
+                      <div class="text-green-400 text-sm">⭐ ${p.data?.rating?.overall}/10</div>
+                    </div>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+            ` : ''}
+          </aside>
         </div>
 
-        ${a.data?.quickVerdict ? `
-        <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-6 mt-8">
-          <h2 class="text-xl font-bold mb-4">${t(locale, 'detail.quickVerdict')}</h2>
-          <p class="text-gray-600 dark:text-gray-300">${a.data.quickVerdict.summary || ''}</p>
+        <!-- Related Articles -->
+        <div class="mt-16">
+          <h2 class="text-2xl font-bold mb-6">${t(locale, 'detail.relatedArticles')}</h2>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ${/* Will be populated by JavaScript */ ''}
+            <div class="bg-gray-800/50 rounded-xl p-6 text-center text-gray-400">
+              <p>${t(locale, 'detail.loading')}</p>
+            </div>
+          </div>
         </div>
-        ` : ''}
       </div>
     </article>
   `, locale, `/${locale}/article/${slug}`))
