@@ -1847,7 +1847,9 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
     const localized = getLocalizedContent(p, locale)
     const image = Array.isArray(p.data?.images) ? p.data.images[0] : null
     return `
-    <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
+    <article class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition relative">
+      <label class="absolute top-3 right-3 z-10 bg-gray-900/80 px-2 py-1 rounded text-xs text-white cursor-pointer"><input type="checkbox" class="compare-choice mr-1" value="${p.slug}"> Compare</label>
+      <a href="/${locale}/product/${p.slug}" class="block">
       <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${image}" alt="${localized.title}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
       <div class="p-4">
         <div class="flex justify-between items-center mb-2">
@@ -1861,7 +1863,8 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
           <span class="text-purple-400">${t(locale, 'products.readReview')} →</span>
         </div>
       </div>
-    </a>
+      </a>
+    </article>
   `}).join('') || `<p class="col-span-3 text-gray-400">${t(locale, 'products.notFound')}</p>`
 
   // Build filter options HTML
@@ -1877,6 +1880,13 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
     <section class="py-12 px-4">
       <div class="max-w-7xl mx-auto">
         <h1 class="text-3xl font-bold mb-8">${t(locale, 'products.title')}</h1>
+
+        <div class="flex flex-wrap gap-2 mb-6">
+          <a href="/${locale}/products?category=mice&rating=8&sort=rating" class="px-3 py-2 text-sm bg-gray-800 hover:bg-purple-600 rounded-lg">Top-rated mice</a>
+          <a href="/${locale}/products?category=keyboards&sort=rating" class="px-3 py-2 text-sm bg-gray-800 hover:bg-purple-600 rounded-lg">Best keyboards</a>
+          <a href="/${locale}/products?category=monitors&sort=rating" class="px-3 py-2 text-sm bg-gray-800 hover:bg-purple-600 rounded-lg">High-refresh monitors</a>
+          <a href="/${locale}/products?priceMax=100&sort=rating" class="px-3 py-2 text-sm bg-gray-800 hover:bg-purple-600 rounded-lg">Under $100</a>
+        </div>
 
         <!-- Filters -->
         <form method="get" class="bg-white dark:bg-gray-800 rounded-xl p-6 mb-8">
@@ -1937,6 +1947,27 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${productsHTML}</div>
       </div>
     </section>
+    <div id="compare-bar" class="fixed bottom-5 left-1/2 -translate-x-1/2 hidden z-40 bg-gray-900 border border-purple-500 rounded-lg px-4 py-3 shadow-xl">
+      <span id="compare-count" class="text-sm mr-3">0 selected</span><button id="compare-go" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium">Compare selected</button>
+    </div>
+    <script>
+      (() => {
+        const choices = Array.from(document.querySelectorAll('.compare-choice'));
+        const bar = document.getElementById('compare-bar');
+        const count = document.getElementById('compare-count');
+        const go = document.getElementById('compare-go');
+        const refresh = () => {
+          const selected = choices.filter(item => item.checked).map(item => item.value).slice(0, 4);
+          bar.classList.toggle('hidden', selected.length < 2);
+          count.textContent = selected.length + ' selected';
+          go.onclick = () => location.href = '/${locale}/compare?products=' + encodeURIComponent(selected.join(','));
+        };
+        choices.forEach(item => item.addEventListener('change', () => {
+          if (choices.filter(choice => choice.checked).length > 4) item.checked = false;
+          refresh();
+        }));
+      })();
+    </script>
   `, locale, `/${locale}/products`))
 })
 
@@ -1969,6 +2000,10 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const additionalSpecs = localized.data?.specs?.additionalSpecs
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
+  const relatedProducts = (await getContent(db, COLLECTIONS.products, { limit: 100 }))
+    .filter((item: any) => item.slug !== p.slug && item.data?.category === p.data?.category)
+    .sort((a: any, b: any) => (b.data?.rating?.overall || 0) - (a.data?.rating?.overall || 0))
+    .slice(0, 3)
   const productCategory = String(p.data?.category || '').replace(/^cat-/, '')
 
   return c.html(wrapHTML(localized.title, `
@@ -2069,6 +2104,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
               ${p.data?.affiliateLinks?.official ? `<a href="${p.data.affiliateLinks.official}" target="_blank" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">${t(locale, 'detail.buyDirect')}</a>` : ''}
               <button onclick="toggleWishlist('${p.id}')" id="wishlist-btn-${p.id}" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">❤️ ${t(locale, 'wishlist.add')}</button>
             </div>
+
+            ${relatedProducts.length > 0 ? `<div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><div class="flex items-center justify-between gap-4 mb-4"><h2 class="text-xl font-bold">Compare with similar products</h2><a href="/${locale}/compare?products=${[p.slug, ...relatedProducts.slice(0, 2).map((item: any) => item.slug)].join(',')}" class="text-purple-400 text-sm">Open comparison</a></div><div class="grid sm:grid-cols-3 gap-3">${relatedProducts.map((item: any) => `<a href="/${locale}/product/${item.slug}" class="p-3 rounded-lg bg-white dark:bg-gray-800 hover:ring-1 hover:ring-purple-500"><div class="font-medium text-sm">${item.title}</div><div class="text-purple-400 text-sm mt-1">$${item.data?.price || '-'} · ${item.data?.rating?.overall || '-'}/10</div></a>`).join('')}</div></div>` : ''}
 
             <!-- Price History -->
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
@@ -2536,8 +2573,8 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
                 ${featuredProducts.slice(0, 3).map((p: any) => `
                   <a href="/${locale}/product/${p.slug}" class="block p-3 bg-gray-700/50 hover:bg-gray-700 rounded-lg transition">
                     <div class="flex items-center gap-3">
-                      <div class="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center text-2xl">
-                        ${getCategoryIcon(p.data?.category)}
+                      <div class="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center overflow-hidden">
+                        ${Array.isArray(p.data?.images) && p.data.images[0] ? `<img src="${p.data.images[0]}" alt="${p.title}" class="w-full h-full object-contain">` : getCategoryIcon(p.data?.category)}
                       </div>
                       <div class="flex-1 min-w-0">
                         <div class="font-medium text-sm truncate">${p.title}</div>
