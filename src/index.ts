@@ -818,13 +818,17 @@ async function getContentBySlug(db: any, collectionId: string, slug: string) {
 
 // Helper: Get category icon
 function getCategoryIcon(categoryId: string): string {
-  if (!categoryId) return '📦'
-  if (categoryId.includes('mice') || categoryId === 'cat-mice-001') return '🖱️'
-  if (categoryId.includes('keyboard') || categoryId === 'cat-keyboards-001') return '⌨️'
-  if (categoryId.includes('headset') || categoryId === 'cat-headsets-001') return '🎧'
-  if (categoryId.includes('monitor') || categoryId === 'cat-monitors-001') return '🖥️'
-  if (categoryId.includes('chair') || categoryId === 'cat-chairs-001') return '🪑'
-  return '📦'
+  let icon = 'package'
+  if (categoryId?.includes('mice') || categoryId === 'cat-mice-001') icon = 'mouse'
+  else if (categoryId?.includes('keyboard') || categoryId === 'cat-keyboards-001') icon = 'keyboard'
+  else if (categoryId?.includes('headset') || categoryId === 'cat-headsets-001') icon = 'headphones'
+  else if (categoryId?.includes('monitor') || categoryId === 'cat-monitors-001') icon = 'monitor'
+  else if (categoryId?.includes('chair') || categoryId === 'cat-chairs-001') icon = 'armchair'
+  return `<i data-lucide="${icon}" class="w-12 h-12" aria-hidden="true"></i>`
+}
+
+function getCategoryIconBySlug(slug: string): string {
+  return getCategoryIcon(slug)
 }
 
 // Helper: Generate language switcher HTML
@@ -981,6 +985,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <!-- Favicon with WebP support -->
   <link rel="icon" type="image/webp" href="https://gearlabgaming.com/favicon.webp" />
   <link rel="icon" type="image/png" sizes="256x256" href="https://gearlabgaming.com/favicon-256.png" />
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="apple-touch-icon" sizes="256x256" href="https://gearlabgaming.com/favicon-256.png" />
 
   <!-- Open Graph / Facebook -->
@@ -1078,7 +1083,8 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
       else img.addEventListener('load', () => img.classList.add('loaded'));
     });
   </script>
-</body>
+  <script>document.addEventListener('DOMContentLoaded', () => window.lucide?.createIcons());</script>
+  </body>
 </html>`
 }
 
@@ -1839,9 +1845,10 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
 
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
+    const image = Array.isArray(p.data?.images) ? p.data.images[0] : null
     return `
     <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
+      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${image}" alt="${localized.title}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
       <div class="p-4">
         <div class="flex justify-between items-center mb-2">
           <span class="text-sm text-purple-400">${p.data?.brand || ''}</span>
@@ -1954,6 +1961,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   }
 
   const localized = getLocalizedContent(p, locale)
+  const productImages = Array.isArray(p.data?.images) ? p.data.images : []
+  const productImage = productImages[0]
   const prosHTML = localized.data?.pros?.map((pro: string) => `<li class="flex items-center gap-2"><span class="text-green-400">✓</span> ${pro}</li>`).join('') || ''
   const consHTML = localized.data?.cons?.map((con: string) => `<li class="flex items-center gap-2"><span class="text-red-400">✗</span> ${con}</li>`).join('') || ''
 
@@ -1963,7 +1972,9 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
         <a href="/${locale}/products" class="text-purple-400 mb-4 inline-block">${t(locale, 'detail.backProducts')}</a>
 
         <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
-          <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-8xl">${getCategoryIcon(p.data?.category)}</div>
+          <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+            ${productImage ? `<img src="${productImage}" alt="${localized.title}" class="w-full h-full object-contain" loading="eager">` : `<span class="text-8xl">${getCategoryIcon(p.data?.category)}</span>`}
+          </div>
           <div class="p-8">
             <div class="flex items-center gap-4 mb-4">
               <span class="text-purple-400">${p.data?.brand}</span>
@@ -2182,7 +2193,13 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
         })();
       </script>
     </section>
-  `, locale, `/${locale}/product/${slug}`))
+  `, locale, `/${locale}/product/${slug}`, {
+    description: localized.data?.verdict || localized.title,
+    image: productImage,
+    type: 'product',
+    schemaType: 'Product',
+    schemaData: p
+  }))
 })
 
 // ============================================
@@ -2197,10 +2214,17 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
 
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
+    const coverMap: Record<string, string> = {
+      'best-budget-gaming-mouse-logitech-g305': '/media/products/logitech-g305-lightspeed.png',
+      'best-gaming-setup-under-200': '/media/products/royal-kludge-rk61.png',
+      'wooting-80he-vs-razer-huntsman-v3-pro': '/media/products/wooting-60he.png',
+      'best-small-gaming-mouse': '/media/products/lamzu-atlantis-mini.png'
+    }
+    const cover = a.data?.featuredImage || coverMap[a.slug]
     return `
-    <a href="/${locale}/article/${a.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="h-40 bg-gradient-to-br from-purple-600 to-blue-600"></div>
-      <div class="p-4">
+    <a href="/${locale}/article/${a.slug}" class="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
+      <div class="h-48 bg-gray-700 overflow-hidden">${cover ? `<img src="${cover}" alt="${localized.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">` : `<div class="w-full h-full bg-gradient-to-br from-purple-600 to-blue-600"></div>`}</div>
+      <div class="p-5">
         <div class="flex items-center gap-2 mb-2">
           <span class="text-xs text-purple-400 uppercase font-medium">${a.data?.type || 'article'}</span>
           <span class="text-xs text-gray-500">${a.data?.readingTime || 5} ${t(locale, 'articles.minRead')}</span>
@@ -2242,6 +2266,13 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
   }
 
   const localized = getLocalizedContent(a, locale)
+  const coverMap: Record<string, string> = {
+    'best-budget-gaming-mouse-logitech-g305': '/media/products/logitech-g305-lightspeed.png',
+    'best-gaming-setup-under-200': '/media/products/royal-kludge-rk61.png',
+    'wooting-80he-vs-razer-huntsman-v3-pro': '/media/products/wooting-60he.png',
+    'best-small-gaming-mouse': '/media/products/lamzu-atlantis-mini.png'
+  }
+  const articleCover = a.data?.featuredImage || coverMap[a.slug]
 
   // Get author info
   let author: any = null
@@ -2306,6 +2337,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
 
         <!-- Article Header -->
         <header class="mb-10">
+          ${articleCover ? `<div class="mb-8 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl"><img src="${articleCover}" alt="${localized.title}" class="w-full max-h-[420px] object-cover" loading="eager"></div>` : ''}
           <!-- Type Badge -->
           <div class="mb-4">
             <span class="inline-block px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm font-medium">
@@ -2396,7 +2428,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
             ` : ''}
 
             <!-- Article Content -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 md:p-10 shadow-lg">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 md:p-10 shadow-lg border border-gray-700/60">
               <div class="prose prose-lg dark:prose-invert max-w-none
                 prose-headings:text-white prose-headings:font-bold
                 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-700
@@ -2509,7 +2541,13 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
         </div>
       </div>
     </article>
-  `, locale, `/${locale}/article/${slug}`))
+  `, locale, `/${locale}/article/${slug}`, {
+    description: localized.data?.excerpt || localized.title,
+    image: articleCover,
+    type: 'article',
+    schemaType: 'Article',
+    schemaData: a
+  }))
 })
 
 // ============================================
@@ -2526,7 +2564,7 @@ app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
     const localized = getLocalizedContent(cat, locale)
     return `
     <a href="/${locale}/category/${cat.data?.slug || cat.slug}" class="bg-white dark:bg-gray-800 rounded-xl p-8 text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition block">
-      <div class="text-6xl mb-4">${cat.data?.icon || '📦'}</div>
+      <div class="text-purple-400 flex justify-center mb-4">${getCategoryIcon(cat.data?.slug || cat.slug)}</div>
       <h3 class="text-xl font-bold mb-2">${localized.data?.name || localized.title}</h3>
       <p class="text-gray-500 dark:text-gray-400 text-sm">${localized.data?.description || ''}</p>
     </a>
@@ -2598,7 +2636,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
       <div class="max-w-7xl mx-auto">
         <a href="/${locale}/categories" class="text-purple-400 mb-4 inline-block">${t(locale, 'detail.backCategories')}</a>
         <div class="flex items-center gap-4 mb-8">
-          <span class="text-5xl">${category.data?.icon || '📦'}</span>
+          <span class="text-purple-400">${getCategoryIcon(category.data?.slug || category.slug)}</span>
           <div>
             <h1 class="text-3xl font-bold">${catName}</h1>
             <p class="text-gray-400 mt-1">${localizedCat.data?.description || ''}</p>
@@ -2623,9 +2661,10 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
 
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
+    const image = Array.isArray(p.data?.images) ? p.data.images[0] : null
     return `
     <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
+      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${image}" alt="${localized.title}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
       <div class="p-4">
         <div class="flex justify-between items-center mb-2">
           <span class="text-sm text-purple-400">${p.data?.brand || ''}</span>
@@ -2639,9 +2678,16 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
 
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
+    const articleCoverMap: Record<string, string> = {
+      'best-budget-gaming-mouse-logitech-g305': '/media/articles/codex-clipboard-3b109a23-6743-47de-8f60-4c4e722710af.webp',
+      'wooting-80he-vs-razer-huntsman-v3-pro': '/media/articles/codex-clipboard-e2605ebe-8cc6-4732-bbb1-369b0eef6e7e.webp',
+      'best-gaming-setup-under-200': '/media/articles/codex-clipboard-38759111-f47b-457d-afe3-25b4499f10f7.webp',
+      'best-small-gaming-mouse': '/media/articles/codex-clipboard-717fee35-029b-4bc9-b7b6-dd82dc62dc54.webp'
+    }
+    const cover = a.data?.featuredImage || articleCoverMap[a.slug]
     return `
     <a href="/${locale}/article/${a.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="h-32 bg-gradient-to-br from-purple-600 to-blue-600"></div>
+      <div class="h-32 bg-gray-700 overflow-hidden">${cover ? `<img src="${cover}" alt="${localized.title}" class="w-full h-full object-cover" loading="lazy">` : ''}</div>
       <div class="p-4">
         <span class="text-xs text-purple-400 uppercase">${a.data?.type || 'article'}</span>
         <h3 class="font-bold mt-1">${localized.title}</h3>
@@ -2654,7 +2700,7 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
     const localized = getLocalizedContent(cat, locale)
     return `
     <a href="/${locale}/category/${cat.data?.slug || cat.slug}" class="bg-white dark:bg-gray-800 rounded-xl p-6 text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition block">
-      <div class="text-4xl mb-2">${cat.data?.icon || '📦'}</div>
+      <div class="text-purple-400 flex justify-center mb-2">${getCategoryIcon(cat.data?.slug || cat.slug)}</div>
       <div class="font-semibold">${localized.data?.name || localized.title}</div>
     </a>
   `}).join('') || ''
@@ -2737,7 +2783,32 @@ app.get('/og-image.webp', async (c) => {
   return new Response(object.body, { headers })
 })
 
+// Product media served from the configured R2 bucket.
+app.get('/media/:key{.+}', async (c) => {
+  const key = c.req.param('key')
+  const object = await c.env.MEDIA_BUCKET.get(key)
+  if (!object) return c.notFound()
+  const headers = new Headers()
+  object.writeHttpMetadata(headers)
+  headers.set('cache-control', 'public, max-age=31536000, immutable')
+  return new Response(object.body, { headers })
+})
+
 // Mount core app (catch-all)
 app.route('/', coreApp)
 
-export default app
+export default {
+  async fetch(request: Request, env: { DB: any; MEDIA_BUCKET: R2Bucket; [key: string]: unknown }, ctx: ExecutionContext) {
+    const url = new URL(request.url)
+    if (url.pathname.startsWith('/media/')) {
+      const key = url.pathname.slice('/media/'.length)
+      const object = await env.MEDIA_BUCKET.get(key)
+      if (!object) return new Response('Not found', { status: 404 })
+      const headers = new Headers()
+      object.writeHttpMetadata(headers)
+      headers.set('cache-control', 'public, max-age=31536000, immutable')
+      return new Response(object.body, { headers })
+    }
+    return app.fetch(request, env, ctx)
+  }
+}

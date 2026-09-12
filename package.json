@@ -12,7 +12,9 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:create-migration": "wrangler d1 migrations create DB",
     "type-check": "tsc --noEmit",
-    "seed": "tsx scripts/seed-admin.ts"
+    "seed": "tsx scripts/seed-admin.ts",
+    "seed:seo": "tsx scripts/seed-seo-content.ts",
+    "update:affiliate": "tsx scripts/update-affiliate-links.ts"
   },
   "dependencies": {
     "@sonicjs-cms/core": "^2.8.0",
