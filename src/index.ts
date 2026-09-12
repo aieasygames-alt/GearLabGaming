@@ -867,8 +867,6 @@ function getHreflangTags(path: string): string {
 
 // Helper: Generate Schema.org structured data
 function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList', data: any, locale: Locale): string {
-  const baseUrl = 'https://gearlabgaming.com'
-
   if (type === 'Website') {
     return JSON.stringify({
       "@context": "https://schema.org",
@@ -912,7 +910,7 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
   }
 
   if (type === 'Article' && data) {
-    return JSON.stringify({
+    const schema: any = {
       "@context": "https://schema.org",
       "@type": "Article",
       "headline": data.title,
@@ -922,8 +920,17 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
         "name": "GearLabGaming Team"
       },
       "datePublished": data.created_at ? new Date(data.created_at).toISOString() : undefined,
-      "dateModified": data.updated_at ? new Date(data.updated_at).toISOString() : undefined
-    })
+      "dateModified": data.updated_at ? new Date(data.updated_at).toISOString() : undefined,
+      "image": data.data?.featuredImage ? `${baseUrl}${data.data.featuredImage}` : undefined
+    }
+    if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
+      schema.mainEntity = data.data.faq.map((item: any) => ({
+        "@type": "Question",
+        "name": item.question,
+        "acceptedAnswer": { "@type": "Answer", "text": item.answer }
+      }))
+    }
+    return JSON.stringify(schema)
   }
 
   if (type === 'ItemList' && data) {
@@ -1047,6 +1054,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
         <a href="/${locale}/products" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.products')}</a>
         <a href="/${locale}/articles" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.articles')}</a>
         <a href="/${locale}/categories" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.categories')}</a>
+        <a href="/${locale}/about" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">About</a>
         <a href="/${locale}/search" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white" title="${t(locale, 'search.title')}">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -1069,6 +1077,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   ${content}
   <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 text-center text-gray-500 dark:text-gray-400 mt-16">
     <p>${t(locale, 'footer.copyright')}</p>
+    <p class="mt-2 text-sm"><a href="/${locale}/about" class="hover:text-purple-400">About & testing method</a> · <a href="/${locale}/affiliate-disclosure" class="hover:text-purple-400">Affiliate disclosure</a></p>
   </footer>
 
   <!-- Theme Toggle Script -->
@@ -1113,6 +1122,35 @@ app.get('/api/info', (c) => {
     version: '1.0.0',
     supportedLocales: SUPPORTED_LOCALES
   })
+})
+
+// Editorial transparency pages
+app.get('/:lang{en|zh|fr|es|ru}/about', (c) => {
+  const locale = c.req.param('lang') as Locale
+  return c.html(wrapHTML('About GearLabGaming', `
+    <section class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+      <h1>About GearLabGaming</h1>
+      <p>GearLabGaming publishes practical gaming gear reviews and buying guides for players who want clear recommendations backed by repeatable criteria.</p>
+      <h2>How we evaluate products</h2>
+      <p>We assess performance, comfort, build quality, features, software, compatibility, and value for the product's intended audience. Scores are category-specific and are not based on price alone.</p>
+      <h2>What our reviews include</h2>
+      <ul><li>Key specifications and real-world use cases</li><li>Strengths, trade-offs, and who should buy</li><li>Alternatives and comparison context</li><li>Update dates when pricing or firmware changes matter</li></ul>
+      <h2>Editorial independence</h2>
+      <p>Retail links may earn a commission, but commissions do not change ratings, rankings, or recommendations. See our <a href="/${locale}/affiliate-disclosure">affiliate disclosure</a>.</p>
+    </div></section>
+  `, locale, `/${locale}/about`))
+})
+
+app.get('/:lang{en|zh|fr|es|ru}/affiliate-disclosure', (c) => {
+  const locale = c.req.param('lang') as Locale
+  return c.html(wrapHTML('Affiliate Disclosure', `
+    <section class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+      <h1>Affiliate Disclosure</h1>
+      <p>Some links on GearLabGaming are affiliate links. If you purchase through one of these links, we may receive a commission at no additional cost to you.</p>
+      <p>Our editorial team selects products and assigns ratings independently. Affiliate relationships do not determine which products we cover or how they are scored.</p>
+      <p>Prices and availability can change at the retailer. Verify the final price, seller, warranty, and return policy before purchase.</p>
+    </div></section>
+  `, locale, `/${locale}/affiliate-disclosure`))
 })
 
 // ============================================
