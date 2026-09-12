@@ -1125,7 +1125,42 @@ app.get('/api/info', (c) => {
 })
 
 // Editorial transparency pages
+const renderAbout = (locale: Locale) => {
+  return `<!DOCTYPE html><html lang="${locale}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>About GearLabGaming</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen"><main class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+      <h1>About GearLabGaming</h1>
+      <p>GearLabGaming publishes practical gaming gear reviews and buying guides for players who want clear recommendations backed by repeatable criteria.</p>
+      <h2>How we evaluate products</h2>
+      <p>We assess performance, comfort, build quality, features, software, compatibility, and value for the product's intended audience. Scores are category-specific and are not based on price alone.</p>
+      <h2>What our reviews include</h2>
+      <ul><li>Key specifications and real-world use cases</li><li>Strengths, trade-offs, and who should buy</li><li>Alternatives and comparison context</li><li>Update dates when pricing or firmware changes matter</li></ul>
+      <h2>Editorial independence</h2>
+      <p>Retail links may earn a commission, but commissions do not change ratings, rankings, or recommendations. See our <a href="/${locale}/affiliate-disclosure">affiliate disclosure</a>.</p>
+    </div></main></body></html>`
+}
+
+app.get('/about', (c) => c.html(renderAbout('en')))
 app.get('/:lang{en|zh|fr|es|ru}/about', (c) => {
+  const locale = c.req.param('lang') as Locale
+  return c.html(renderAbout(locale))
+})
+
+const renderDisclosure = (locale: Locale) => {
+  return `<!DOCTYPE html><html lang="${locale}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Affiliate Disclosure</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen"><main class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+      <h1>Affiliate Disclosure</h1>
+      <p>Some links on GearLabGaming are affiliate links. If you purchase through one of these links, we may receive a commission at no additional cost to you.</p>
+      <p>Our editorial team selects products and assigns ratings independently. Affiliate relationships do not determine which products we cover or how they are scored.</p>
+      <p>Prices and availability can change at the retailer. Verify the final price, seller, warranty, and return policy before purchase.</p>
+    </div></main></body></html>`
+}
+
+app.get('/affiliate-disclosure', (c) => c.html(renderDisclosure('en')))
+app.get('/:lang{en|zh|fr|es|ru}/affiliate-disclosure', (c) => {
+  const locale = c.req.param('lang') as Locale
+  return c.html(renderDisclosure(locale))
+})
+
+/*
+app.get('/:lang{en|zh|fr|es|ru}/about-legacy', (c) => {
   const locale = c.req.param('lang') as Locale
   return c.html(wrapHTML('About GearLabGaming', `
     <section class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
@@ -1152,6 +1187,7 @@ app.get('/:lang{en|zh|fr|es|ru}/affiliate-disclosure', (c) => {
     </div></section>
   `, locale, `/${locale}/affiliate-disclosure`))
 })
+*/
 
 // ============================================
 // SEO: SITEMAP & ROBOTS.TXT
