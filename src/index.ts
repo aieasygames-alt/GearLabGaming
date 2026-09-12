@@ -1969,6 +1969,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const additionalSpecs = localized.data?.specs?.additionalSpecs
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
+  const productCategory = String(p.data?.category || '').replace(/^cat-/, '')
 
   return c.html(wrapHTML(localized.title, `
     <section class="py-12 px-4">
@@ -1991,6 +1992,12 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             <div class="text-4xl font-bold text-purple-400 mb-6">$${p.data?.price}</div>
 
             <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">${localized.data?.verdict || ''}</p>
+
+            <div class="grid sm:grid-cols-3 gap-3 mb-8 text-sm">
+              <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Tested for</div><div class="text-gray-500 dark:text-gray-400">Gaming performance, comfort, build, and value</div></div>
+              <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Review status</div><div class="text-gray-500 dark:text-gray-400">Independent editorial assessment</div></div>
+              <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Last updated</div><div class="text-gray-500 dark:text-gray-400">${new Date((p.updated_at || p.created_at || Date.now() / 1000) * 1000).toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale)}</div></div>
+            </div>
 
             <!-- Specs -->
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
@@ -2057,6 +2064,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
 
             <!-- Buy Links -->
             <div class="flex gap-4 mb-6">
+              <a href="/${locale}/compare?products=${p.slug}" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold">Compare products</a>
               ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold">${t(locale, 'detail.buyAmazon')}</a>` : ''}
               ${p.data?.affiliateLinks?.official ? `<a href="${p.data.affiliateLinks.official}" target="_blank" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">${t(locale, 'detail.buyDirect')}</a>` : ''}
               <button onclick="toggleWishlist('${p.id}')" id="wishlist-btn-${p.id}" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">❤️ ${t(locale, 'wishlist.add')}</button>
@@ -2071,6 +2079,11 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             </div>
 
             ${faq.length > 0 ? `<div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-4">Frequently asked questions</h2><div class="space-y-5">${faq.map((item: any) => `<div><h3 class="font-semibold mb-1">${item.question || ''}</h3><p class="text-gray-400">${item.answer || ''}</p></div>`).join('')}</div></div>` : ''}
+
+            <div class="border-t border-gray-700 pt-6 mt-2 text-sm text-gray-500 dark:text-gray-400">
+              <p>We may earn a commission from qualifying purchases. This does not affect our ratings or editorial recommendations.</p>
+              <p class="mt-2">Ratings combine performance, build quality, usability, and value for the product's intended audience.</p>
+            </div>
 
             <!-- Comments Section -->
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6">
