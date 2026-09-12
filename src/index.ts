@@ -1965,6 +1965,10 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const productImage = productImages[0]
   const prosHTML = localized.data?.pros?.map((pro: string) => `<li class="flex items-center gap-2"><span class="text-green-400">✓</span> ${pro}</li>`).join('') || ''
   const consHTML = localized.data?.cons?.map((con: string) => `<li class="flex items-center gap-2"><span class="text-red-400">✗</span> ${con}</li>`).join('') || ''
+  const bestFor = Array.isArray(localized.data?.bestFor) ? localized.data.bestFor : []
+  const additionalSpecs = localized.data?.specs?.additionalSpecs
+  const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
+  const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
 
   return c.html(wrapHTML(localized.title, `
     <section class="py-12 px-4">
@@ -1996,8 +2000,11 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
                 ${p.data?.specs?.dimensions ? `<div><span class="text-gray-400">Dimensions:</span> <span class="font-medium">${p.data.specs.dimensions}</span></div>` : ''}
                 ${p.data?.specs?.connectivity ? `<div><span class="text-gray-400">Connectivity:</span> <span class="font-medium">${p.data.specs.connectivity}</span></div>` : ''}
                 ${p.data?.specs?.sensor ? `<div><span class="text-gray-400">Sensor:</span> <span class="font-medium">${p.data.specs.sensor}</span></div>` : ''}
+                ${additionalSpecs ? `<div class="col-span-2"><span class="text-gray-400">Key details:</span> <span class="font-medium">${additionalSpecs}</span></div>` : ''}
               </div>
             </div>
+
+            ${bestFor.length > 0 ? `<div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-3">Who it is for</h2><div class="flex flex-wrap gap-2">${bestFor.map((item: string) => `<span class="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">${item}</span>`).join('')}</div></div>` : ''}
 
             <!-- Rating Breakdown -->
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
@@ -2046,6 +2053,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
               </div>
             </div>
 
+            ${buyingNotes.length > 0 ? `<div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-4">Buying checklist</h2><ul class="space-y-3">${buyingNotes.map((note: string) => `<li class="flex gap-3"><span class="text-purple-400">•</span><span>${note}</span></li>`).join('')}</ul></div>` : ''}
+
             <!-- Buy Links -->
             <div class="flex gap-4 mb-6">
               ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold">${t(locale, 'detail.buyAmazon')}</a>` : ''}
@@ -2060,6 +2069,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
                 ${t(locale, 'priceHistory.noData')}
               </div>
             </div>
+
+            ${faq.length > 0 ? `<div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-4">Frequently asked questions</h2><div class="space-y-5">${faq.map((item: any) => `<div><h3 class="font-semibold mb-1">${item.question || ''}</h3><p class="text-gray-400">${item.answer || ''}</p></div>`).join('')}</div></div>` : ''}
 
             <!-- Comments Section -->
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6">
