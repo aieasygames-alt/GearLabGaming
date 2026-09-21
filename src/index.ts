@@ -832,6 +832,27 @@ function formatContentDate(timestamp: unknown, locale: string): string {
   return date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale)
 }
 
+function stripHtml(value: unknown): string {
+  return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+function isIndexableProduct(product: any): boolean {
+  const reviewLength = stripHtml(product.data?.reviewContent || product.data?.content).length
+  const verdictLength = stripHtml(product.data?.verdict).length
+  const hasCoreDetails = Boolean(product.data?.brand && product.data?.price && product.data?.rating?.overall)
+  return reviewLength >= 600 || (verdictLength >= 70 && hasCoreDetails)
+}
+
+function isIndexableArticle(article: any): boolean {
+  return stripHtml(article.data?.content).length >= 800
+}
+
+function isIndexableCategory(category: any): boolean {
+  const slug = String(category.data?.slug || category.slug || '')
+  const title = String(category.title || '')
+  return Boolean(category.data?.isActive) && Boolean(slug) && !slug.startsWith('test-') && !/\btest\b/i.test(title)
+}
+
 // Helper: Get single content by slug
 async function getContentBySlug(db: any, collectionId: string, slug: string) {
   const results = await getContent(db, collectionId, { slug, limit: 1 })
@@ -1256,19 +1277,22 @@ app.get('/sitemap.xml', async (c) => {
 
   // Product pages.
   for (const product of products) {
-    addUrl(`/${DEFAULT_LOCALE}/product/${product.slug}`, formatSitemapDate(product.updated_at || product.created_at), '0.7')
+    if (isIndexableProduct(product)) {
+      addUrl(`/${DEFAULT_LOCALE}/product/${product.slug}`, formatSitemapDate(product.updated_at || product.created_at), '0.7')
+    }
   }
 
   // Article pages.
   for (const article of articles) {
-    addUrl(`/${DEFAULT_LOCALE}/article/${article.slug}`, formatSitemapDate(article.updated_at || article.created_at), '0.6')
+    if (isIndexableArticle(article)) {
+      addUrl(`/${DEFAULT_LOCALE}/article/${article.slug}`, formatSitemapDate(article.updated_at || article.created_at), '0.6')
+    }
   }
 
   // Category pages.
   for (const category of categories) {
     const categorySlug = String(category.data?.slug || category.slug || '')
-    const isTestCategory = categorySlug.startsWith('test-') || /\btest\b/i.test(String(category.title || ''))
-    if (categorySlug && !isTestCategory) {
+    if (isIndexableCategory(category)) {
       addUrl(`/${DEFAULT_LOCALE}/category/${categorySlug}`, formatSitemapDate(category.updated_at || category.created_at), '0.5')
     }
   }
@@ -1863,10 +1887,10 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
   const ratingMin = parseFloat(c.req.query('rating') || '0')
 
   // Get all products
-  let products = await getContent(db, COLLECTIONS.products, { limit: 100 })
+  let products = (await getContent(db, COLLECTIONS.products, { limit: 100 })).filter(isIndexableProduct)
 
   // Get categories for filter dropdown
-  const categories = await getContent(db, COLLECTIONS.categories, { limit: 20 })
+  const categories = (await getContent(db, COLLECTIONS.categories, { limit: 20 })).filter(isIndexableCategory)
 
   // Get unique brands
   const productBrands: string[] = products
@@ -2076,7 +2100,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
   const relatedProducts = (await getContent(db, COLLECTIONS.products, { limit: 100 }))
-    .filter((item: any) => item.slug !== p.slug && item.data?.category === p.data?.category)
+    .filter((item: any) => isIndexableProduct(item) && item.slug !== p.slug && item.data?.category === p.data?.category)
     .sort((a: any, b: any) => (b.data?.rating?.overall || 0) - (a.data?.rating?.overall || 0))
     .slice(0, 3)
   const productCategory = String(p.data?.category || '').replace(/^cat-/, '')
@@ -2336,6 +2360,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
     keywords: productSeo.keywords,
     image: productImage,
     type: 'product',
+    robots: isIndexableProduct(p) ? undefined : 'noindex,follow',
     schemaType: 'Product',
     schemaData: p
   }))
@@ -2348,7 +2373,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
 app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
-  const articles = await getContent(db, COLLECTIONS.articles, { limit: 50 })
+  const articles = (await getContent(db, COLLECTIONS.articles, { limit: 50 })).filter(isIndexableArticle)
 
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
@@ -2440,10 +2465,10 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
   const featuredProductIds = Array.isArray(a.data?.featuredProducts)
     ? a.data.featuredProducts.map((item: any) => typeof item === 'string' ? item : item?.productId).filter(Boolean)
     : []
-  const featuredProducts = allProducts.filter((product: any) => featuredProductIds.includes(product.id))
+  const featuredProducts = allProducts.filter((product: any) => isIndexableProduct(product) && featuredProductIds.includes(product.id))
 
   const relatedArticles = [...allArticles]
-    .filter((article: any) => article.id !== a.id)
+    .filter((article: any) => isIndexableArticle(article) && article.id !== a.id)
     .sort((left: any, right: any) => {
       const leftMatchesCategory = left.data?.category === a.data?.category ? 1 : 0
       const rightMatchesCategory = right.data?.category === a.data?.category ? 1 : 0
@@ -2703,6 +2728,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     keywords: articleSeo.keywords,
     image: articleCover,
     type: 'article',
+    robots: isIndexableArticle(a) ? undefined : 'noindex,follow',
     schemaType: 'Article',
     schemaData: a
   }))
@@ -2715,7 +2741,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
 app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
-  const categories = await getContent(db, COLLECTIONS.categories, { limit: 20 })
+  const categories = (await getContent(db, COLLECTIONS.categories, { limit: 20 })).filter(isIndexableCategory)
 
   const categoriesHTML = categories.map((cat: any) => {
     const localized = getLocalizedContent(cat, locale)
@@ -2749,7 +2775,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   // Get all categories and find the one matching the slug
   const allCategories = await getContent(db, COLLECTIONS.categories, { limit: 100 })
   const category = allCategories.find((cat: any) =>
-    cat.data?.slug === slug || cat.slug === slug
+    isIndexableCategory(cat) && (cat.data?.slug === slug || cat.slug === slug)
   )
 
   if (!category) {
@@ -2768,6 +2794,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   // Get all products and filter by category
   const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
   const filteredProducts = allProducts.filter((p: any) => {
+    if (!isIndexableProduct(p)) return false
     return p.data?.category === catId || p.data?.category?.includes(slug)
   })
 
