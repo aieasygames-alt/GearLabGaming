@@ -847,6 +847,19 @@ function toAbsoluteUrl(value: string | undefined): string | undefined {
   }
 }
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function escapeJsonForHtml(value: string): string {
+  return value.replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
+}
+
 function stripHtml(value: unknown): string {
   return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -1049,6 +1062,11 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   const metaDescription = seo.description || TRANSLATIONS[locale].home.subtitle
   const metaImage = toAbsoluteUrl(seo.image) || `${BASE_URL}/og-image.webp`
   const metaType = seo.type || 'website'
+  const escapedTitle = escapeHtml(documentTitle)
+  const escapedDescription = escapeHtml(metaDescription)
+  const escapedImage = escapeHtml(metaImage)
+  const escapedCanonicalUrl = escapeHtml(canonicalUrl)
+  const escapedKeywords = seo.keywords ? escapeHtml(seo.keywords) : ''
 
   return `<!DOCTYPE html>
 <html lang="${locale}">
@@ -1057,12 +1075,12 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Primary Meta Tags -->
-  <title>${documentTitle}</title>
-  <meta name="title" content="${documentTitle}" />
-  <meta name="description" content="${metaDescription}" />
+  <title>${escapedTitle}</title>
+  <meta name="title" content="${escapedTitle}" />
+  <meta name="description" content="${escapedDescription}" />
   <meta name="color-scheme" content="dark light" />
   ${seo.robots ? `<meta name="robots" content="${seo.robots}" />` : ''}
-  ${seo.keywords ? `<meta name="keywords" content="${seo.keywords}" />` : ''}
+  ${seo.keywords ? `<meta name="keywords" content="${escapedKeywords}" />` : ''}
 
   <!-- Favicon with WebP support -->
   <link rel="icon" type="image/webp" href="https://gearlabgaming.com/favicon.webp" />
@@ -1072,25 +1090,25 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="${metaType}" />
-  <meta property="og:url" content="${canonicalUrl}" />
-  <meta property="og:title" content="${documentTitle}" />
-  <meta property="og:description" content="${metaDescription}" />
-  <meta property="og:image" content="${metaImage}" />
+  <meta property="og:url" content="${escapedCanonicalUrl}" />
+  <meta property="og:title" content="${escapedTitle}" />
+  <meta property="og:description" content="${escapedDescription}" />
+  <meta property="og:image" content="${escapedImage}" />
   <meta property="og:locale" content="${locale}" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="${canonicalUrl}" />
-  <meta property="twitter:title" content="${documentTitle}" />
-  <meta property="twitter:description" content="${metaDescription}" />
-  <meta property="twitter:image" content="${metaImage}" />
+  <meta property="twitter:url" content="${escapedCanonicalUrl}" />
+  <meta property="twitter:title" content="${escapedTitle}" />
+  <meta property="twitter:description" content="${escapedDescription}" />
+  <meta property="twitter:image" content="${escapedImage}" />
 
   <!-- Canonical & Hreflang -->
-  <link rel="canonical" href="${canonicalUrl}" />
+  <link rel="canonical" href="${escapedCanonicalUrl}" />
   ${hreflangTags}
 
   <!-- Schema.org Structured Data -->
-  <script type="application/ld+json">${schemaOrg}</script>
+  <script type="application/ld+json">${escapeJsonForHtml(schemaOrg)}</script>
 
   <!-- Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
