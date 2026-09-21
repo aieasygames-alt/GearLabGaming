@@ -2431,13 +2431,25 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     author = { name: 'GearLabGaming Team', bio: 'Expert gaming gear reviewers', avatar: null }
   }
 
-  // Get featured products
-  let featuredProducts: any[] = []
-  if (a.data?.featuredProducts && a.data.featuredProducts.length > 0) {
-    const productIds = a.data.featuredProducts.map((fp: any) => fp.productId)
-    const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
-    featuredProducts = allProducts.filter((p: any) => productIds.includes(p.id))
-  }
+  const [allProducts, allArticles] = await Promise.all([
+    getContent(db, COLLECTIONS.products, { limit: 100 }),
+    getContent(db, COLLECTIONS.articles, { limit: 100 })
+  ])
+
+  // Accept both legacy string IDs and the current relation-object format.
+  const featuredProductIds = Array.isArray(a.data?.featuredProducts)
+    ? a.data.featuredProducts.map((item: any) => typeof item === 'string' ? item : item?.productId).filter(Boolean)
+    : []
+  const featuredProducts = allProducts.filter((product: any) => featuredProductIds.includes(product.id))
+
+  const relatedArticles = [...allArticles]
+    .filter((article: any) => article.id !== a.id)
+    .sort((left: any, right: any) => {
+      const leftMatchesCategory = left.data?.category === a.data?.category ? 1 : 0
+      const rightMatchesCategory = right.data?.category === a.data?.category ? 1 : 0
+      return rightMatchesCategory - leftMatchesCategory || Number(right.updated_at || 0) - Number(left.updated_at || 0)
+    })
+    .slice(0, 3)
 
   // Generate TOC from content headings
   const content = localized.data?.content || ''
@@ -2668,16 +2680,22 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
           </aside>
         </div>
 
+        ${relatedArticles.length > 0 ? `
         <!-- Related Articles -->
-        <div class="mt-16">
+        <section class="mt-16">
           <h2 class="text-2xl font-bold mb-6">${t(locale, 'detail.relatedArticles')}</h2>
           <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            ${/* Will be populated by JavaScript */ ''}
-            <div class="bg-gray-800/50 rounded-xl p-6 text-center text-gray-400">
-              <p>${t(locale, 'detail.loading')}</p>
-            </div>
+            ${relatedArticles.map((article: any) => {
+              const related = getLocalizedContent(article, locale)
+              return `<a href="/${locale}/article/${article.slug}" class="block rounded-xl border border-gray-700 bg-gray-800/50 p-5 hover:border-purple-500 hover:bg-gray-800 transition">
+                <span class="text-xs font-medium uppercase text-purple-400">${article.data?.type || 'article'}</span>
+                <h3 class="mt-2 font-bold text-white">${related.title}</h3>
+                <p class="mt-2 text-sm text-gray-400 line-clamp-3">${related.data?.excerpt || ''}</p>
+              </a>`
+            }).join('')}
           </div>
-        </div>
+        </section>
+        ` : ''}
       </div>
     </article>
   `, locale, `/${locale}/article/${slug}`, {
