@@ -2858,11 +2858,19 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
 
-  const [products, articles, categories] = await Promise.all([
-    getContent(db, COLLECTIONS.products, { limit: 6 }),
-    getContent(db, COLLECTIONS.articles, { limit: 3 }),
-    getContent(db, COLLECTIONS.categories, { limit: 6 })
+  const [allProducts, allArticles, allCategories] = await Promise.all([
+    getContent(db, COLLECTIONS.products, { limit: 100 }),
+    getContent(db, COLLECTIONS.articles, { limit: 100 }),
+    getContent(db, COLLECTIONS.categories, { limit: 100 })
   ])
+
+  const byFeaturedThenRecent = (left: any, right: any) => {
+    const featuredDifference = Number(Boolean(right.data?.featured)) - Number(Boolean(left.data?.featured))
+    return featuredDifference || Number(right.updated_at || right.created_at || 0) - Number(left.updated_at || left.created_at || 0)
+  }
+  const products = allProducts.filter(isIndexableProduct).sort(byFeaturedThenRecent).slice(0, 6)
+  const articles = allArticles.filter(isIndexableArticle).sort(byFeaturedThenRecent).slice(0, 3)
+  const categories = allCategories.filter(isIndexableCategory).slice(0, 6)
 
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
