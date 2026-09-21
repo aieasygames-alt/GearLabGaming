@@ -832,6 +832,12 @@ function formatContentDate(timestamp: unknown, locale: string): string {
   return date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale)
 }
 
+function toIsoDate(timestamp: unknown): string | undefined {
+  const value = Number(timestamp)
+  if (!Number.isFinite(value) || value <= 0) return undefined
+  return new Date(value < 10_000_000_000 ? value * 1000 : value).toISOString()
+}
+
 function stripHtml(value: unknown): string {
   return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -946,17 +952,27 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
   }
 
   if (type === 'Article' && data) {
+    const canonicalUrl = `${BASE_URL}/${DEFAULT_LOCALE}/article/${data.slug}`
     const schema: any = {
       "@context": "https://schema.org",
       "@type": "Article",
       "headline": data.title,
       "description": data.data?.excerpt || '',
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": canonicalUrl
+      },
       "author": {
-        "@type": "Person",
+        "@type": "Organization",
         "name": "GearLabGaming Team"
       },
-      "datePublished": data.created_at ? new Date(Number(data.created_at) * 1000).toISOString() : undefined,
-      "dateModified": data.updated_at ? new Date(Number(data.updated_at) * 1000).toISOString() : undefined,
+      "publisher": {
+        "@type": "Organization",
+        "name": "GearLabGaming",
+        "url": BASE_URL
+      },
+      "datePublished": toIsoDate(data.created_at),
+      "dateModified": toIsoDate(data.updated_at || data.created_at),
       "image": data.data?.featuredImage ? `${BASE_URL}${data.data.featuredImage}` : undefined
     }
     if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
@@ -2832,7 +2848,11 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${productsHTML}</div>
       </div>
     </section>
-  `, locale, `/${locale}/category/${slug}`))
+  `, locale, `/${locale}/category/${slug}`, {
+    description: localizedCat.data?.description || `${catName} gaming gear reviews and recommendations.`,
+    schemaType: 'ItemList',
+    schemaData: { name: catName, items: filteredProducts }
+  }))
 })
 app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
   const locale = getLocale(c.req.param('lang'))
