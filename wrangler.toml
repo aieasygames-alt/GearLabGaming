@@ -69,8 +69,19 @@ routes = [
   { pattern = "gearlabgaming.com/*", zone_name = "gearlabgaming.com" },
   { pattern = "www.gearlabgaming.com/*", zone_name = "gearlabgaming.com" }
 ]
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "gearlabgaming"
+database_id = "76d8fbcb-a3b3-478e-9460-3423f3b0eda4"
+migrations_dir = "./migrations"
+
+[[env.production.r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "gearlabgaming-media"
+
 [env.production.vars]
 ENVIRONMENT = "production"
+SITE_NAME = "GearLabGaming"
 SITE_URL = "https://gearlabgaming.com"
 
 # =========================================

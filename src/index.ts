@@ -51,6 +51,7 @@ const app = new Hono<{ Bindings: { DB: any } }>()
 const SUPPORTED_LOCALES = ['en', 'zh', 'fr', 'es', 'ru'] as const
 type Locale = typeof SUPPORTED_LOCALES[number]
 const DEFAULT_LOCALE: Locale = 'en'
+const BASE_URL = 'https://gearlabgaming.com'
 
 const LOCALE_NAMES: Record<Locale, string> = {
   en: 'English',
@@ -781,7 +782,7 @@ function isValidLocale(locale: string): locale is Locale {
 
 // Helper: Query content from D1 database
 async function getContent(db: any, collectionId: string, options: { limit?: number; slug?: string } = {}) {
-  let sql = 'SELECT * FROM content WHERE collection_id = ?'
+  let sql = "SELECT * FROM content WHERE collection_id = ? AND status = 'published'"
   const params: any[] = [collectionId]
 
   if (options.slug) {
@@ -810,6 +811,20 @@ async function getContent(db: any, collectionId: string, options: { limit?: numb
   }))
 }
 
+function formatSitemapDate(timestamp: unknown): string {
+  const value = Number(timestamp)
+  if (!Number.isFinite(value) || value <= 0) return new Date().toISOString().slice(0, 10)
+  return new Date(value < 10_000_000_000 ? value * 1000 : value).toISOString().slice(0, 10)
+}
+
+function formatContentDate(timestamp: unknown, locale: string): string {
+  const value = Number(timestamp)
+  const date = Number.isFinite(value) && value > 0
+    ? new Date(value < 10_000_000_000 ? value * 1000 : value)
+    : new Date()
+  return date.toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale)
+}
+
 // Helper: Get single content by slug
 async function getContentBySlug(db: any, collectionId: string, slug: string) {
   const results = await getContent(db, collectionId, { slug, limit: 1 })
@@ -835,11 +850,7 @@ function getCategoryIconBySlug(slug: string): string {
 function getLanguageSwitcher(currentLocale: Locale, currentPath: string): string {
   const pathWithoutLang = currentPath.replace(/^\/[a-z]{2}/, '') || '/'
 
-  const options = SUPPORTED_LOCALES.map(locale => {
-    const isActive = locale === currentLocale
-    const href = locale === DEFAULT_LOCALE ? `/${locale}${pathWithoutLang}` : `/${locale}${pathWithoutLang}`
-    return `<a href="${href}" class="block px-4 py-2 text-sm ${isActive ? 'bg-purple-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}">${LOCALE_NAMES[locale]}</a>`
-  }).join('')
+  const options = `<a href="/${DEFAULT_LOCALE}${pathWithoutLang}" class="block px-4 py-2 text-sm bg-purple-600 text-white">${LOCALE_NAMES[DEFAULT_LOCALE]}</a>`
 
   return `
     <div class="relative group">
@@ -857,12 +868,9 @@ function getLanguageSwitcher(currentLocale: Locale, currentPath: string): string
 
 // Helper: Generate hreflang tags
 function getHreflangTags(path: string): string {
-  const pathWithoutLang = path.replace(/^\/[a-z]{2}/, '') || '/'
-
-  return SUPPORTED_LOCALES.map(locale => {
-    const href = `https://gearlabgaming.com/${locale}${pathWithoutLang}`
-    return `<link rel="alternate" hreflang="${locale}" href="${href}" />`
-  }).join('\n  ')
+  const pathWithoutLang = path.replace(/^\/[a-z]{2}/, '')
+  const href = `${BASE_URL}/${DEFAULT_LOCALE}${pathWithoutLang}`
+  return `<link rel="alternate" hreflang="en" href="${href}" />\n  <link rel="alternate" hreflang="x-default" href="${href}" />`
 }
 
 // Helper: Generate Schema.org structured data
@@ -873,11 +881,11 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       "@type": "WebSite",
       "name": "GearLabGaming",
       "description": TRANSLATIONS[locale].home.subtitle,
-      "url": baseUrl,
+      "url": BASE_URL,
       "inLanguage": locale,
       "potentialAction": {
         "@type": "SearchAction",
-        "target": `${baseUrl}/${locale}/search?q={search_term_string}`,
+        "target": `${BASE_URL}/${locale}/search?q={search_term_string}`,
         "query-input": "required name=search_term_string"
       }
     })
@@ -919,9 +927,9 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
         "@type": "Person",
         "name": "GearLabGaming Team"
       },
-      "datePublished": data.created_at ? new Date(data.created_at).toISOString() : undefined,
-      "dateModified": data.updated_at ? new Date(data.updated_at).toISOString() : undefined,
-      "image": data.data?.featuredImage ? `${baseUrl}${data.data.featuredImage}` : undefined
+      "datePublished": data.created_at ? new Date(Number(data.created_at) * 1000).toISOString() : undefined,
+      "dateModified": data.updated_at ? new Date(Number(data.updated_at) * 1000).toISOString() : undefined,
+      "image": data.data?.featuredImage ? `${BASE_URL}${data.data.featuredImage}` : undefined
     }
     if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
       schema.mainEntity = data.data.faq.map((item: any) => ({
@@ -942,7 +950,7 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       "itemListElement": (data.items || []).map((item: any, index: number) => ({
         "@type": "ListItem",
         "position": index + 1,
-        "url": `${baseUrl}/${locale}/product/${item.slug}`
+        "url": `${BASE_URL}/${locale}/product/${item.slug}`
       }))
     })
   }
@@ -964,7 +972,8 @@ interface SEOOptions {
 function wrapHTML(title: string, content: string, locale: Locale, path: string, seo: SEOOptions = {}) {
   const langSwitcher = getLanguageSwitcher(locale, path)
   const hreflangTags = getHreflangTags(path)
-  const canonicalUrl = `https://gearlabgaming.com/${locale}${path.replace(/^\/[a-z]{2}/, '') || '/'}`
+  const canonicalPath = path.replace(/^\/[a-z]{2}/, '')
+  const canonicalUrl = `${BASE_URL}/${locale}${canonicalPath}`
 
   // Generate Schema.org
   const schemaOrg = seo.schemaType
@@ -1102,9 +1111,19 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
 // ============================================
 
 app.get('/', (c) => {
-  const acceptLanguage = c.req.header('Accept-Language')
-  const locale = detectLocale(acceptLanguage)
-  return c.redirect(`/${locale}`)
+  return c.redirect(`/${DEFAULT_LOCALE}`, 301)
+})
+
+// Only English has complete editorial content today. Keep translated URLs out of
+// Google's index until their titles, descriptions, and body copy are localized.
+app.use('*', async (c, next) => {
+  const requestUrl = new URL(c.req.url)
+  const match = requestUrl.pathname.match(/^\/(zh|fr|es|ru)(?=\/|$)/)
+  if (match) {
+    const pathname = requestUrl.pathname.replace(/^\/(zh|fr|es|ru)(?=\/|$)/, `/${DEFAULT_LOCALE}`)
+    return c.redirect(`${pathname}${requestUrl.search}`, 301)
+  }
+  return next()
 })
 
 // ============================================
@@ -1125,8 +1144,8 @@ app.get('/api/info', (c) => {
 })
 
 // Editorial transparency pages
-const renderAbout = (locale: Locale) => {
-  return `<!DOCTYPE html><html lang="${locale}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>About GearLabGaming</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen"><main class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+const renderAbout = (locale: Locale) => wrapHTML('About GearLabGaming', `
+    <section class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
       <h1>About GearLabGaming</h1>
       <p>GearLabGaming publishes practical gaming gear reviews and buying guides for players who want clear recommendations backed by repeatable criteria.</p>
       <h2>How we evaluate products</h2>
@@ -1135,8 +1154,10 @@ const renderAbout = (locale: Locale) => {
       <ul><li>Key specifications and real-world use cases</li><li>Strengths, trade-offs, and who should buy</li><li>Alternatives and comparison context</li><li>Update dates when pricing or firmware changes matter</li></ul>
       <h2>Editorial independence</h2>
       <p>Retail links may earn a commission, but commissions do not change ratings, rankings, or recommendations. See our <a href="/${locale}/affiliate-disclosure">affiliate disclosure</a>.</p>
-    </div></main></body></html>`
-}
+    </div></section>
+  `, locale, `/${locale}/about`, {
+    description: 'Learn how GearLabGaming evaluates gaming gear and maintains editorial independence.'
+  })
 
 app.get('/about', (c) => c.html(renderAbout('en')))
 app.get('/:lang{en|zh|fr|es|ru}/about', (c) => {
@@ -1144,14 +1165,16 @@ app.get('/:lang{en|zh|fr|es|ru}/about', (c) => {
   return c.html(renderAbout(locale))
 })
 
-const renderDisclosure = (locale: Locale) => {
-  return `<!DOCTYPE html><html lang="${locale}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Affiliate Disclosure</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen"><main class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+const renderDisclosure = (locale: Locale) => wrapHTML('Affiliate Disclosure', `
+    <section class="py-16 px-4"><div class="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
       <h1>Affiliate Disclosure</h1>
       <p>Some links on GearLabGaming are affiliate links. If you purchase through one of these links, we may receive a commission at no additional cost to you.</p>
       <p>Our editorial team selects products and assigns ratings independently. Affiliate relationships do not determine which products we cover or how they are scored.</p>
       <p>Prices and availability can change at the retailer. Verify the final price, seller, warranty, and return policy before purchase.</p>
-    </div></main></body></html>`
-}
+    </div></section>
+  `, locale, `/${locale}/affiliate-disclosure`, {
+    description: 'GearLabGaming affiliate disclosure and editorial independence policy.'
+  })
 
 app.get('/affiliate-disclosure', (c) => c.html(renderDisclosure('en')))
 app.get('/:lang{en|zh|fr|es|ru}/affiliate-disclosure', (c) => {
@@ -1195,7 +1218,6 @@ app.get('/:lang{en|zh|fr|es|ru}/affiliate-disclosure', (c) => {
 
 app.get('/sitemap.xml', async (c) => {
   const db = c.env.DB
-  const baseUrl = 'https://gearlabgaming.com'
 
   // Get all content
   const [products, articles, categories] = await Promise.all([
@@ -1204,79 +1226,38 @@ app.get('/sitemap.xml', async (c) => {
     getContent(db, COLLECTIONS.categories, { limit: 100 })
   ])
 
-  const now = new Date().toISOString().split('T')[0]
-
-  // Generate URLs for all languages
+  // Submit only the canonical English URLs until translated editorial content is live.
   let urls = ''
-
-  // Homepage for each language
-  for (const lang of SUPPORTED_LOCALES) {
+  const addUrl = (path: string, lastmod: string, priority: string) => {
     urls += `
   <url>
-    <loc>${baseUrl}/${lang}</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
+    <loc>${BASE_URL}${path}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <priority>${priority}</priority>
   </url>`
   }
 
-  // Static pages for each language
+  addUrl(`/${DEFAULT_LOCALE}`, new Date().toISOString().slice(0, 10), '1.0')
+
+  // Static indexable pages.
   const staticPages = ['products', 'articles', 'categories']
-  for (const lang of SUPPORTED_LOCALES) {
-    for (const page of staticPages) {
-      urls += `
-  <url>
-    <loc>${baseUrl}/${lang}/${page}</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>`
-    }
-  }
+  for (const page of staticPages) addUrl(`/${DEFAULT_LOCALE}/${page}`, new Date().toISOString().slice(0, 10), '0.8')
+  addUrl(`/${DEFAULT_LOCALE}/about`, new Date().toISOString().slice(0, 10), '0.4')
+  addUrl(`/${DEFAULT_LOCALE}/affiliate-disclosure`, new Date().toISOString().slice(0, 10), '0.3')
 
-  // Product pages for each language
+  // Product pages.
   for (const product of products) {
-    const lastmod = product.updated_at
-      ? new Date(product.updated_at).toISOString().split('T')[0]
-      : now
-    for (const lang of SUPPORTED_LOCALES) {
-      urls += `
-  <url>
-    <loc>${baseUrl}/${lang}/product/${product.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>`
-    }
+    addUrl(`/${DEFAULT_LOCALE}/product/${product.slug}`, formatSitemapDate(product.updated_at || product.created_at), '0.7')
   }
 
-  // Article pages for each language
+  // Article pages.
   for (const article of articles) {
-    const lastmod = article.updated_at
-      ? new Date(article.updated_at).toISOString().split('T')[0]
-      : now
-    for (const lang of SUPPORTED_LOCALES) {
-      urls += `
-  <url>
-    <loc>${baseUrl}/${lang}/article/${article.slug}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>`
-    }
+    addUrl(`/${DEFAULT_LOCALE}/article/${article.slug}`, formatSitemapDate(article.updated_at || article.created_at), '0.6')
   }
 
-  // Category pages for each language
+  // Category pages.
   for (const category of categories) {
-    for (const lang of SUPPORTED_LOCALES) {
-      urls += `
-  <url>
-    <loc>${baseUrl}/${lang}/category/${category.data?.slug || category.slug}</loc>
-    <lastmod>${now}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>`
-    }
+    addUrl(`/${DEFAULT_LOCALE}/category/${category.data?.slug || category.slug}`, formatSitemapDate(category.updated_at || category.created_at), '0.5')
   }
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -2062,7 +2043,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
         <h1 class="text-4xl font-bold mb-4">${t(locale, 'detail.productNotFound')}</h1>
         <a href="/${locale}/products" class="text-purple-400">${t(locale, 'detail.backProducts')}</a>
       </section>
-    `, locale, `/${locale}/product/${slug}`))
+    `, locale, `/${locale}/product/${slug}`), 404)
   }
 
   const localized = getLocalizedContent(p, locale)
@@ -2105,7 +2086,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             <div class="grid sm:grid-cols-3 gap-3 mb-8 text-sm">
               <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Tested for</div><div class="text-gray-500 dark:text-gray-400">Gaming performance, comfort, build, and value</div></div>
               <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Review status</div><div class="text-gray-500 dark:text-gray-400">Independent editorial assessment</div></div>
-              <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Last updated</div><div class="text-gray-500 dark:text-gray-400">${new Date((p.updated_at || p.created_at || Date.now() / 1000) * 1000).toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale)}</div></div>
+              <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Last updated</div><div class="text-gray-500 dark:text-gray-400">${formatContentDate(p.updated_at || p.created_at, locale)}</div></div>
             </div>
 
             <!-- Specs -->
@@ -2397,7 +2378,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
         <h1 class="text-4xl font-bold mb-4">${t(locale, 'detail.articleNotFound')}</h1>
         <a href="/${locale}/articles" class="text-purple-400">${t(locale, 'detail.backArticles')}</a>
       </section>
-    `, locale, `/${locale}/article/${slug}`))
+    `, locale, `/${locale}/article/${slug}`), 404)
   }
 
   const localized = getLocalizedContent(a, locale)
@@ -2521,7 +2502,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
             <!-- Updated -->
             <div class="flex items-center gap-2">
               <span>🔄</span>
-              <span>${t(locale, 'detail.updated')} ${new Date(a.updated_at * 1000 || a.updated_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale, { month: 'short', day: 'numeric' })}</span>
+              <span>${t(locale, 'detail.updated')} ${formatContentDate(a.updated_at || a.created_at, locale)}</span>
             </div>
           </div>
 
@@ -2737,7 +2718,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
         <h1 class="text-4xl font-bold mb-4">${t(locale, 'detail.categoryNotFound')}</h1>
         <a href="/${locale}/categories" class="text-purple-400">${t(locale, 'detail.backCategories')}</a>
       </section>
-    `, locale, `/${locale}/category/${slug}`))
+    `, locale, `/${locale}/category/${slug}`), 404)
   }
 
   const localizedCat = getLocalizedContent(category, locale)
