@@ -2424,6 +2424,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
 app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
+  const hasUnsupportedFilters = Boolean(c.req.query('author'))
   const articles = (await getContent(db, COLLECTIONS.articles, { limit: 50 })).filter(isIndexableArticle)
 
   const articlesHTML = articles.map((a: any) => {
@@ -2456,7 +2457,9 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${articlesHTML}</div>
       </div>
     </section>
-  `, locale, `/${locale}/articles`))
+  `, locale, `/${locale}/articles`, {
+    robots: hasUnsupportedFilters ? 'noindex,follow' : undefined
+  }))
 })
 
 // ============================================
@@ -2701,11 +2704,6 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
                 <div>
                   <h3 class="font-bold text-lg">${author.name}</h3>
                   <p class="text-gray-400 text-sm mt-1">${author.bio || 'Expert gaming gear reviewer with years of experience testing the latest peripherals.'}</p>
-                  <div class="flex gap-4 mt-3">
-                    <a href="/${locale}/articles?author=${encodeURIComponent(author.name)}" class="text-purple-400 text-sm hover:text-purple-300">
-                      ${t(locale, 'detail.viewAllArticles')} →
-                    </a>
-                  </div>
                 </div>
               </div>
             </div>
