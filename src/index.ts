@@ -1884,7 +1884,7 @@ app.get('/:lang{en|zh|fr|es|ru}/compare', async (c) => {
                   <a href="/${locale}/product/${p.slug}" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-medium">
                     ${t(locale, 'products.readReview')}
                   </a>
-                  ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm font-medium">
+                  ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" rel="sponsored nofollow noopener noreferrer" class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm font-medium">
                     ${t(locale, 'detail.buyAmazon')}
                   </a>` : ''}
                 </div>
@@ -2270,8 +2270,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             <!-- Buy Links -->
             <div class="flex gap-4 mb-6">
               <a href="/${locale}/compare?products=${p.slug}" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold">Compare products</a>
-              ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold">${t(locale, 'detail.buyAmazon')}</a>` : ''}
-              ${p.data?.affiliateLinks?.official ? `<a href="${p.data.affiliateLinks.official}" target="_blank" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">${t(locale, 'detail.buyDirect')}</a>` : ''}
+              ${p.data?.affiliateLinks?.amazon ? `<a href="${p.data.affiliateLinks.amazon}" target="_blank" rel="sponsored nofollow noopener noreferrer" class="px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold">${t(locale, 'detail.buyAmazon')}</a>` : ''}
+              ${p.data?.affiliateLinks?.official ? `<a href="${p.data.affiliateLinks.official}" target="_blank" rel="sponsored nofollow noopener noreferrer" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">${t(locale, 'detail.buyDirect')}</a>` : ''}
               <button onclick="toggleWishlist('${p.id}')" id="wishlist-btn-${p.id}" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold">❤️ ${t(locale, 'wishlist.add')}</button>
             </div>
 
@@ -2641,10 +2641,10 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
           <!-- Share Buttons -->
           <div class="flex items-center gap-4 mt-6">
             <span class="text-sm text-gray-400">${t(locale, 'detail.share')}:</span>
-            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(localized.title)}&url=${encodeURIComponent('https://gearlabgaming.com/' + locale + '/article/' + slug)}" target="_blank" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Twitter">
+            <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(localized.title)}&url=${encodeURIComponent('https://gearlabgaming.com/' + locale + '/article/' + slug)}" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Twitter">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
-            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://gearlabgaming.com/' + locale + '/article/' + slug)}" target="_blank" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Facebook">
+            <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://gearlabgaming.com/' + locale + '/article/' + slug)}" target="_blank" rel="noopener noreferrer" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Facebook">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
             </a>
             <button onclick="navigator.clipboard.writeText(window.location.href)" class="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition" title="Copy Link">
