@@ -935,21 +935,30 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
   }
 
   if (type === 'Product' && data) {
-    return JSON.stringify({
+    const canonicalUrl = `${BASE_URL}/${DEFAULT_LOCALE}/product/${data.slug}`
+    const productImage = toAbsoluteUrl(data.data?.images?.[0])
+    const purchaseUrl = toAbsoluteUrl(data.data?.affiliateLinks?.official || data.data?.affiliateLinks?.amazon)
+    const schema: any = {
       "@context": "https://schema.org",
       "@type": "Product",
       "name": data.title,
       "description": data.data?.verdict || '',
+      "url": canonicalUrl,
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": canonicalUrl
+      },
+      "image": productImage,
       "brand": {
         "@type": "Brand",
         "name": data.data?.brand || ''
       },
-      "offers": {
+      "offers": purchaseUrl ? {
         "@type": "Offer",
+        "url": purchaseUrl,
         "price": data.data?.price || 0,
-        "priceCurrency": "USD",
-        "availability": "https://schema.org/InStock"
-      },
+        "priceCurrency": "USD"
+      } : undefined,
       "aggregateRating": data.data?.rating?.overall ? {
         "@type": "AggregateRating",
         "ratingValue": data.data.rating.overall,
@@ -957,7 +966,8 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
         "worstRating": 0,
         "ratingCount": 1
       } : undefined
-    })
+    }
+    return JSON.stringify(schema)
   }
 
   if (type === 'Article' && data) {
