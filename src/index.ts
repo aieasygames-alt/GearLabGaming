@@ -1331,8 +1331,10 @@ Disallow: /admin/`
 app.get('/api/search', async (c) => {
   const db = c.env.DB
   const q = c.req.query('q') || ''
-  const type = c.req.query('type') || 'all' // products, articles, all
-  const limit = parseInt(c.req.query('limit') || '20')
+  const requestedType = c.req.query('type') || 'all'
+  const type = requestedType === 'products' || requestedType === 'articles' ? requestedType : 'all'
+  const requestedLimit = Number.parseInt(c.req.query('limit') || '20', 10)
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 20) : 20
 
   if (!q || q.length < 2) {
     return c.json({ results: [], query: q, total: 0 })
@@ -1356,7 +1358,7 @@ app.get('/api/search', async (c) => {
     results = results.concat(productResults.results?.map((r: any) => ({
       ...r,
       data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
-    })) || [])
+    })).filter(isIndexableProduct) || [])
   }
 
   // Search articles
@@ -1374,7 +1376,7 @@ app.get('/api/search', async (c) => {
     results = results.concat(articleResults.results?.map((r: any) => ({
       ...r,
       data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
-    })) || [])
+    })).filter(isIndexableArticle) || [])
   }
 
   return c.json({
@@ -1527,7 +1529,8 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
   const q = c.req.query('q') || ''
-  const type = c.req.query('type') || 'all'
+  const requestedType = c.req.query('type') || 'all'
+  const type = requestedType === 'products' || requestedType === 'articles' ? requestedType : 'all'
 
   let results: any[] = []
 
@@ -1549,7 +1552,7 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
       results = results.concat((productResults.results || []).map((r: any) => ({
         ...r,
         data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
-      })))
+      })).filter(isIndexableProduct))
     }
 
     // Search articles
@@ -1567,7 +1570,7 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
       results = results.concat((articleResults.results || []).map((r: any) => ({
         ...r,
         data: typeof r.data === 'string' ? JSON.parse(r.data) : r.data
-      })))
+      })).filter(isIndexableArticle))
     }
   }
 
@@ -1653,10 +1656,10 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
 app.get('/:lang{en|zh|fr|es|ru}/compare', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
-  const slugs = c.req.query('products')?.split(',').filter(Boolean) || []
+  const slugs = c.req.query('products')?.split(',').filter(Boolean).slice(0, 4) || []
 
   // Get all products for selection dropdown
-  const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
+  const allProducts = (await getContent(db, COLLECTIONS.products, { limit: 100 })).filter(isIndexableProduct)
 
   // Get selected products
   const selectedProducts = slugs.length > 0
