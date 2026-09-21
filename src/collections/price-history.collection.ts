@@ -4,7 +4,7 @@
  * Track price changes for products over time
  */
 
-import type { CollectionConfig } from '@sonicjs-cms/core'
+import type { CollectionConfig } from '../collection-config'
 
 export default {
   name: 'price-history',

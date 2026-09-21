@@ -9,9 +9,13 @@ import { Hono } from 'hono'
 const frontend = new Hono()
 
 // Helper function to fetch data from API
-async function fetchAPI(endpoint: string) {
+interface ApiContentResponse {
+  data?: unknown[]
+}
+
+async function fetchAPI(endpoint: string): Promise<ApiContentResponse> {
   const response = await fetch(`https://gearlabgaming.com${endpoint}`)
-  return response.json()
+  return response.json() as Promise<ApiContentResponse>
 }
 
 // Homepage

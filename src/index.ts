@@ -16,6 +16,7 @@ import articlesCollection from './collections/articles.collection'
 import authorsCollection from './collections/authors.collection'
 import priceHistoryCollection from './collections/price-history.collection'
 import commentsCollection from './collections/comments.collection'
+import { toSonicCollectionConfig } from './collection-config'
 
 // Register all custom collections
 registerCollections([
@@ -25,7 +26,7 @@ registerCollections([
   authorsCollection,
   priceHistoryCollection,
   commentsCollection
-])
+].map(toSonicCollectionConfig))
 
 // Application configuration
 const config: SonicJSConfig = {
@@ -42,7 +43,9 @@ const config: SonicJSConfig = {
 const coreApp = createSonicJSApp(config)
 
 // Create main app with custom routes
-const app = new Hono<{ Bindings: { DB: any } }>()
+type AppBindings = { DB: any; MEDIA_BUCKET: R2Bucket }
+
+const app = new Hono<{ Bindings: AppBindings }>()
 
 // ============================================
 // MULTI-LANGUAGE CONFIGURATION
@@ -52,6 +55,10 @@ const SUPPORTED_LOCALES = ['en', 'zh', 'fr', 'es', 'ru'] as const
 type Locale = typeof SUPPORTED_LOCALES[number]
 const DEFAULT_LOCALE: Locale = 'en'
 const BASE_URL = 'https://gearlabgaming.com'
+
+function getLocale(value: string): Locale {
+  return isValidLocale(value) ? value : DEFAULT_LOCALE
+}
 
 const LOCALE_NAMES: Record<Locale, string> = {
   en: 'English',
@@ -1487,8 +1494,7 @@ app.post('/api/comments', async (c) => {
 
 // Search page
 app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
   const q = c.req.query('q') || ''
   const type = c.req.query('type') || 'all'
@@ -1613,8 +1619,7 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/compare', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
   const slugs = c.req.query('products')?.split(',').filter(Boolean) || []
 
@@ -1836,8 +1841,7 @@ app.get('/:lang{en|zh|fr|es|ru}/compare', async (c) => {
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
 
   // Get query parameters for filtering and sorting
@@ -1855,7 +1859,10 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
   const categories = await getContent(db, COLLECTIONS.categories, { limit: 20 })
 
   // Get unique brands
-  const brands = [...new Set(products.map((p: any) => p.data?.brand).filter(Boolean))].sort()
+  const productBrands: string[] = products
+    .map((p: any): unknown => p.data?.brand)
+    .filter((brand: unknown): brand is string => typeof brand === 'string')
+  const brands = [...new Set(productBrands)].sort()
 
   // Apply filters
   if (categoryFilter) {
@@ -2031,8 +2038,7 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const slug = c.req.param('slug')
   const db = c.env.DB
   const p = await getContentBySlug(db, COLLECTIONS.products, slug)
@@ -2323,8 +2329,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
   const articles = await getContent(db, COLLECTIONS.articles, { limit: 50 })
 
@@ -2366,8 +2371,7 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const slug = c.req.param('slug')
   const db = c.env.DB
   const a = await getContentBySlug(db, COLLECTIONS.articles, slug)
@@ -2671,8 +2675,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
   const categories = await getContent(db, COLLECTIONS.categories, { limit: 20 })
 
@@ -2701,8 +2704,7 @@ app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
 // ============================================
 
 app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const slug = c.req.param('slug')
   const db = c.env.DB
 
@@ -2765,8 +2767,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   `, locale, `/${locale}/category/${slug}`))
 })
 app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
-  const lang = c.req.param('lang')
-  const locale: Locale = lang
+  const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
 
   const [products, articles, categories] = await Promise.all([
@@ -2914,7 +2915,7 @@ app.get('/media/:key{.+}', async (c) => {
 app.route('/', coreApp)
 
 export default {
-  async fetch(request: Request, env: { DB: any; MEDIA_BUCKET: R2Bucket; [key: string]: unknown }, ctx: ExecutionContext) {
+  async fetch(request: Request, env: AppBindings, ctx: ExecutionContext) {
     const url = new URL(request.url)
     if (url.pathname.startsWith('/media/')) {
       const key = url.pathname.slice('/media/'.length)

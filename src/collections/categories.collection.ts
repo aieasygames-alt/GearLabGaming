@@ -4,7 +4,7 @@
  * Product categories: Mice, Keyboards, Headsets, Monitors, Chairs
  */
 
-import type { CollectionConfig } from '@sonicjs-cms/core'
+import type { CollectionConfig } from '../collection-config'
 
 export default {
   name: 'categories',
