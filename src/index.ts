@@ -2886,8 +2886,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
     schemaData: { name: catName, items: filteredProducts }
   }))
 })
-app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
-  const locale = getLocale(c.req.param('lang'))
+const renderHomepage = async (c: any, locale: Locale) => {
   const db = c.env.DB
 
   const [allProducts, allArticles, allCategories] = await Promise.all([
@@ -2991,7 +2990,11 @@ app.get('/:lang{en|zh|fr|es|ru}', async (c) => {
       </div>
     </section>
   `, locale, `/${locale}`))
-})
+}
+
+for (const locale of SUPPORTED_LOCALES) {
+  app.get(`/${locale}`, (c) => renderHomepage(c, locale))
+}
 
 
 // Static assets routes (served from R2)
