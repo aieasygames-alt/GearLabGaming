@@ -1160,6 +1160,18 @@ app.get('/', (c) => {
   return c.redirect(`/${DEFAULT_LOCALE}`, 301)
 })
 
+// Keep each document on one URL. Without this, trailing-slash paths fall
+// through to the locale homepage route and create duplicate 200 responses.
+app.use('*', async (c, next) => {
+  const requestUrl = new URL(c.req.url)
+  const normalizedPath = requestUrl.pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/'
+  const canonicalPath = normalizedPath.replace(/^\/(zh|fr|es|ru)(?=\/|$)/, `/${DEFAULT_LOCALE}`)
+  if (canonicalPath !== requestUrl.pathname) {
+    return c.redirect(`${canonicalPath}${requestUrl.search}`, 301)
+  }
+  return next()
+})
+
 // Only English has complete editorial content today. Keep translated URLs out of
 // Google's index until their titles, descriptions, and body copy are localized.
 app.use('*', async (c, next) => {
