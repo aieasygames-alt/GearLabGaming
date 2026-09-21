@@ -971,6 +971,7 @@ interface SEOOptions {
   keywords?: string
   image?: string
   type?: 'website' | 'article' | 'product'
+  robots?: string
   schemaType?: 'Website' | 'Product' | 'Article' | 'ItemList'
   schemaData?: any
 }
@@ -1003,6 +1004,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <meta name="title" content="${title} | GearLabGaming" />
   <meta name="description" content="${metaDescription}" />
   <meta name="color-scheme" content="dark light" />
+  ${seo.robots ? `<meta name="robots" content="${seo.robots}" />` : ''}
   ${seo.keywords ? `<meta name="keywords" content="${seo.keywords}" />` : ''}
 
   <!-- Favicon with WebP support -->
@@ -1264,7 +1266,11 @@ app.get('/sitemap.xml', async (c) => {
 
   // Category pages.
   for (const category of categories) {
-    addUrl(`/${DEFAULT_LOCALE}/category/${category.data?.slug || category.slug}`, formatSitemapDate(category.updated_at || category.created_at), '0.5')
+    const categorySlug = String(category.data?.slug || category.slug || '')
+    const isTestCategory = categorySlug.startsWith('test-') || /\btest\b/i.test(String(category.title || ''))
+    if (categorySlug && !isTestCategory) {
+      addUrl(`/${DEFAULT_LOCALE}/category/${categorySlug}`, formatSitemapDate(category.updated_at || category.created_at), '0.5')
+    }
   }
 
   const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1611,7 +1617,9 @@ app.get('/:lang{en|zh|fr|es|ru}/search', async (c) => {
         ${results.length > 0 ? `<p class="text-gray-500 dark:text-gray-400 text-sm mt-4">${results.length} ${t(locale, 'search.resultsFound')}</p>` : ''}
       </div>
     </section>
-  `, locale, `/${locale}/search`))
+  `, locale, `/${locale}/search`, {
+    robots: 'noindex,follow'
+  }))
 })
 
 // ============================================
@@ -1828,7 +1836,9 @@ app.get('/:lang{en|zh|fr|es|ru}/compare', async (c) => {
         ${compareHTML}
       </div>
     </section>
-  `, locale, `/${locale}/compare`))
+  `, locale, `/${locale}/compare`, {
+    robots: 'noindex,follow'
+  }))
 })
 
 // ============================================
@@ -2030,7 +2040,11 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
         }));
       })();
     </script>
-  `, locale, `/${locale}/products`))
+  `, locale, `/${locale}/products`, {
+    robots: categoryFilter || brandFilter || priceMin > 0 || priceMax < 9999 || ratingMin > 0 || sortBy !== 'newest'
+      ? 'noindex,follow'
+      : undefined
+  }))
 })
 
 // ============================================
@@ -2067,7 +2081,9 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
     .slice(0, 3)
   const productCategory = String(p.data?.category || '').replace(/^cat-/, '')
 
-  return c.html(wrapHTML(localized.title, `
+  const productSeo = p.data?.seo || {}
+
+  return c.html(wrapHTML(productSeo.title || localized.title, `
     <section class="py-12 px-4">
       <div class="max-w-4xl mx-auto">
         <a href="/${locale}/products" class="text-purple-400 mb-4 inline-block">${t(locale, 'detail.backProducts')}</a>
@@ -2316,7 +2332,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
       </script>
     </section>
   `, locale, `/${locale}/product/${slug}`, {
-    description: localized.data?.verdict || localized.title,
+    description: productSeo.description || localized.data?.verdict || localized.title,
+    keywords: productSeo.keywords,
     image: productImage,
     type: 'product',
     schemaType: 'Product',
@@ -2443,7 +2460,9 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     'news': '📰 News'
   }
 
-  return c.html(wrapHTML(localized.title, `
+  const articleSeo = a.data?.seo || {}
+
+  return c.html(wrapHTML(articleSeo.title || localized.title, `
     <article class="py-12 px-4">
       <div class="max-w-4xl mx-auto">
         <!-- Breadcrumb -->
@@ -2498,7 +2517,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
             <!-- Date -->
             <div class="flex items-center gap-2">
               <span>📅</span>
-              <span>${new Date(a.created_at * 1000 || a.created_at).toLocaleDateString(locale === 'zh' ? 'zh-CN' : locale, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+              <span>${formatContentDate(a.created_at, locale)}</span>
             </div>
 
             <span class="text-gray-600">|</span>
@@ -2662,7 +2681,8 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
       </div>
     </article>
   `, locale, `/${locale}/article/${slug}`, {
-    description: localized.data?.excerpt || localized.title,
+    description: articleSeo.description || localized.data?.excerpt || localized.title,
+    keywords: articleSeo.keywords,
     image: articleCover,
     type: 'article',
     schemaType: 'Article',
