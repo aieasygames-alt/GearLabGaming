@@ -838,6 +838,15 @@ function toIsoDate(timestamp: unknown): string | undefined {
   return new Date(value < 10_000_000_000 ? value * 1000 : value).toISOString()
 }
 
+function toAbsoluteUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  try {
+    return new URL(value, BASE_URL).toString()
+  } catch {
+    return undefined
+  }
+}
+
 function stripHtml(value: unknown): string {
   return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -973,7 +982,7 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       },
       "datePublished": toIsoDate(data.created_at),
       "dateModified": toIsoDate(data.updated_at || data.created_at),
-      "image": data.data?.featuredImage ? `${BASE_URL}${data.data.featuredImage}` : undefined
+      "image": toAbsoluteUrl(data.data?.featuredImage)
     }
     if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
       schema.mainEntity = data.data.faq.map((item: any) => ({
@@ -1019,6 +1028,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   const hreflangTags = getHreflangTags(path)
   const canonicalPath = path.replace(/^\/[a-z]{2}/, '')
   const canonicalUrl = `${BASE_URL}/${locale}${canonicalPath}`
+  const documentTitle = /\|\s*GearLabGaming\s*$/i.test(title) ? title : `${title} | GearLabGaming`
 
   // Generate Schema.org
   const schemaOrg = seo.schemaType
@@ -1027,7 +1037,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
 
   // Default meta description
   const metaDescription = seo.description || TRANSLATIONS[locale].home.subtitle
-  const metaImage = seo.image || 'https://gearlabgaming.com/og-image.webp'
+  const metaImage = toAbsoluteUrl(seo.image) || `${BASE_URL}/og-image.webp`
   const metaType = seo.type || 'website'
 
   return `<!DOCTYPE html>
@@ -1037,8 +1047,8 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- Primary Meta Tags -->
-  <title>${title} | GearLabGaming</title>
-  <meta name="title" content="${title} | GearLabGaming" />
+  <title>${documentTitle}</title>
+  <meta name="title" content="${documentTitle}" />
   <meta name="description" content="${metaDescription}" />
   <meta name="color-scheme" content="dark light" />
   ${seo.robots ? `<meta name="robots" content="${seo.robots}" />` : ''}
@@ -1053,7 +1063,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="${metaType}" />
   <meta property="og:url" content="${canonicalUrl}" />
-  <meta property="og:title" content="${title} | GearLabGaming" />
+  <meta property="og:title" content="${documentTitle}" />
   <meta property="og:description" content="${metaDescription}" />
   <meta property="og:image" content="${metaImage}" />
   <meta property="og:locale" content="${locale}" />
@@ -1061,7 +1071,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="${canonicalUrl}" />
-  <meta property="twitter:title" content="${title} | GearLabGaming" />
+  <meta property="twitter:title" content="${documentTitle}" />
   <meta property="twitter:description" content="${metaDescription}" />
   <meta property="twitter:image" content="${metaImage}" />
 
