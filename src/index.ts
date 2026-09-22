@@ -729,6 +729,14 @@ const COLLECTIONS = {
   // Note: price-history and comments collections are queried by name in API routes
 }
 
+const PRODUCT_SLUG_REDIRECTS: Record<string, string> = {
+  'lg-27gp850-b-ultragear-review': 'lg-27gp850-b-review'
+}
+
+const ARTICLE_SLUG_REDIRECTS: Record<string, string> = {
+  'budget-gaming-setup-under-200': 'best-gaming-setup-under-200'
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -886,6 +894,20 @@ function getRelatedProductIdentifiers(value: unknown): string[] {
   return value
     .map((item: any) => typeof item === 'string' ? item : item?.productId || item?.id || item?.slug)
     .filter((item: unknown): item is string => typeof item === 'string' && item.length > 0)
+}
+
+function getCategorySlug(value: unknown, categories: any[]): string {
+  const categoryValue = String(value || '')
+  const category = categories.find((item: any) =>
+    item.id === categoryValue || item.slug === categoryValue || item.data?.slug === categoryValue
+  )
+  if (category) return String(category.data?.slug || category.slug || '')
+  return categoryValue.replace(/^cat-/, '').replace(/-\d+$/, '')
+}
+
+function areSameCategory(left: unknown, right: unknown, categories: any[]): boolean {
+  const leftSlug = getCategorySlug(left, categories)
+  return Boolean(leftSlug) && leftSlug === getCategorySlug(right, categories)
 }
 
 // Helper: Get single content by slug
@@ -1350,14 +1372,14 @@ app.get('/sitemap.xml', async (c) => {
 
   // Product pages.
   for (const product of products) {
-    if (isIndexableProduct(product)) {
+    if (isIndexableProduct(product) && !PRODUCT_SLUG_REDIRECTS[product.slug]) {
       addUrl(`/${DEFAULT_LOCALE}/product/${product.slug}`, formatSitemapDate(product.updated_at || product.created_at), '0.7')
     }
   }
 
   // Article pages.
   for (const article of articles) {
-    if (isIndexableArticle(article)) {
+    if (isIndexableArticle(article) && !ARTICLE_SLUG_REDIRECTS[article.slug]) {
       addUrl(`/${DEFAULT_LOCALE}/article/${article.slug}`, formatSitemapDate(article.updated_at || article.created_at), '0.6')
     }
   }
@@ -1977,8 +1999,7 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
   // Apply filters
   if (categoryFilter) {
     products = products.filter((p: any) => {
-      const cat = categories.find((c: any) => c.id === p.data?.category || c.data?.slug === categoryFilter)
-      return cat && (cat.id === p.data?.category || cat.data?.slug === categoryFilter || p.data?.category === categoryFilter)
+      return getCategorySlug(p.data?.category, categories) === categoryFilter
     })
   }
 
@@ -2154,6 +2175,8 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
 app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const slug = c.req.param('slug')
+  const redirectSlug = PRODUCT_SLUG_REDIRECTS[slug]
+  if (redirectSlug) return c.redirect(`/${locale}/product/${redirectSlug}`, 301)
   const db = c.env.DB
   const p = await getContentBySlug(db, COLLECTIONS.products, slug)
 
@@ -2176,8 +2199,12 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
   const reviewContent = localized.data?.reviewContent || p.data?.reviewContent || ''
-  const relatedProducts = (await getContent(db, COLLECTIONS.products, { limit: 100 }))
-    .filter((item: any) => isIndexableProduct(item) && item.slug !== p.slug && item.data?.category === p.data?.category)
+  const [allProducts, allCategories] = await Promise.all([
+    getContent(db, COLLECTIONS.products, { limit: 100 }),
+    getContent(db, COLLECTIONS.categories, { limit: 100 })
+  ])
+  const relatedProducts = allProducts
+    .filter((item: any) => isIndexableProduct(item) && item.slug !== p.slug && !PRODUCT_SLUG_REDIRECTS[item.slug] && areSameCategory(item.data?.category, p.data?.category, allCategories))
     .sort((a: any, b: any) => (b.data?.rating?.overall || 0) - (a.data?.rating?.overall || 0))
     .slice(0, 3)
   const productCategory = String(p.data?.category || '').replace(/^cat-/, '')
@@ -2497,6 +2524,8 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
 app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const slug = c.req.param('slug')
+  const redirectSlug = ARTICLE_SLUG_REDIRECTS[slug]
+  if (redirectSlug) return c.redirect(`/${locale}/article/${redirectSlug}`, 301)
   const db = c.env.DB
   const a = await getContentBySlug(db, COLLECTIONS.articles, slug)
 
@@ -2538,22 +2567,23 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     author = { name: 'GearLabGaming Team', bio: 'Expert gaming gear reviewers', avatar: null }
   }
 
-  const [allProducts, allArticles] = await Promise.all([
+  const [allProducts, allArticles, allCategories] = await Promise.all([
     getContent(db, COLLECTIONS.products, { limit: 100 }),
-    getContent(db, COLLECTIONS.articles, { limit: 100 })
+    getContent(db, COLLECTIONS.articles, { limit: 100 }),
+    getContent(db, COLLECTIONS.categories, { limit: 100 })
   ])
 
   // Accept both legacy string IDs and the current relation-object format.
   const featuredProductIds = getRelatedProductIdentifiers(a.data?.featuredProducts)
   const featuredProducts = allProducts.filter((product: any) =>
-    isIndexableProduct(product) && (featuredProductIds.includes(product.id) || featuredProductIds.includes(product.slug))
+    isIndexableProduct(product) && !PRODUCT_SLUG_REDIRECTS[product.slug] && (featuredProductIds.includes(product.id) || featuredProductIds.includes(product.slug))
   )
 
   const relatedArticles = [...allArticles]
-    .filter((article: any) => isIndexableArticle(article) && article.id !== a.id)
+    .filter((article: any) => isIndexableArticle(article) && article.id !== a.id && !ARTICLE_SLUG_REDIRECTS[article.slug])
     .sort((left: any, right: any) => {
-      const leftMatchesCategory = left.data?.category === a.data?.category ? 1 : 0
-      const rightMatchesCategory = right.data?.category === a.data?.category ? 1 : 0
+      const leftMatchesCategory = areSameCategory(left.data?.category, a.data?.category, allCategories) ? 1 : 0
+      const rightMatchesCategory = areSameCategory(right.data?.category, a.data?.category, allCategories) ? 1 : 0
       return rightMatchesCategory - leftMatchesCategory || Number(right.updated_at || 0) - Number(left.updated_at || 0)
     })
     .slice(0, 3)
@@ -2865,15 +2895,13 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   }
 
   const localizedCat = getLocalizedContent(category, locale)
-  const catId = category.id
   const catName = localizedCat.data?.name || localizedCat.title || slug
   const categorySeo = category.data?.seo || {}
 
   // Get all products and filter by category
   const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
   const filteredProducts = allProducts.filter((p: any) => {
-    if (!isIndexableProduct(p)) return false
-    return p.data?.category === catId || p.data?.category?.includes(slug)
+    return isIndexableProduct(p) && !PRODUCT_SLUG_REDIRECTS[p.slug] && areSameCategory(p.data?.category, slug, allCategories)
   })
 
   const productsHTML = filteredProducts.map((p: any) => {
