@@ -881,6 +881,13 @@ function isIndexableCategory(category: any): boolean {
   return Boolean(category.data?.isActive) && Boolean(slug) && !slug.startsWith('test-') && !/\btest\b/i.test(title)
 }
 
+function getRelatedProductIdentifiers(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item: any) => typeof item === 'string' ? item : item?.productId || item?.id || item?.slug)
+    .filter((item: unknown): item is string => typeof item === 'string' && item.length > 0)
+}
+
 // Helper: Get single content by slug
 async function getContentBySlug(db: any, collectionId: string, slug: string) {
   const results = await getContent(db, collectionId, { slug, limit: 1 })
@@ -2168,6 +2175,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const additionalSpecs = localized.data?.specs?.additionalSpecs
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
+  const reviewContent = localized.data?.reviewContent || p.data?.reviewContent || ''
   const relatedProducts = (await getContent(db, COLLECTIONS.products, { limit: 100 }))
     .filter((item: any) => isIndexableProduct(item) && item.slug !== p.slug && item.data?.category === p.data?.category)
     .sort((a: any, b: any) => (b.data?.rating?.overall || 0) - (a.data?.rating?.overall || 0))
@@ -2217,6 +2225,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             </div>
 
             ${bestFor.length > 0 ? `<div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-3">Who it is for</h2><div class="flex flex-wrap gap-2">${bestFor.map((item: string) => `<span class="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">${item}</span>`).join('')}</div></div>` : ''}
+
+            ${reviewContent ? `<div class="bg-white dark:bg-gray-800 rounded-xl p-6 md:p-8 shadow-lg border border-gray-700/60 mb-8"><div class="prose prose-lg dark:prose-invert max-w-none prose-headings:text-white prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-700 prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-4 prose-strong:text-white prose-ul:my-4 prose-ol:my-4 prose-li:text-gray-300 prose-li:my-1">${reviewContent}</div></div>` : ''}
 
             <!-- Rating Breakdown -->
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
@@ -2534,10 +2544,10 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
   ])
 
   // Accept both legacy string IDs and the current relation-object format.
-  const featuredProductIds = Array.isArray(a.data?.featuredProducts)
-    ? a.data.featuredProducts.map((item: any) => typeof item === 'string' ? item : item?.productId).filter(Boolean)
-    : []
-  const featuredProducts = allProducts.filter((product: any) => isIndexableProduct(product) && featuredProductIds.includes(product.id))
+  const featuredProductIds = getRelatedProductIdentifiers(a.data?.featuredProducts)
+  const featuredProducts = allProducts.filter((product: any) =>
+    isIndexableProduct(product) && (featuredProductIds.includes(product.id) || featuredProductIds.includes(product.slug))
+  )
 
   const relatedArticles = [...allArticles]
     .filter((article: any) => isIndexableArticle(article) && article.id !== a.id)
@@ -2857,6 +2867,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   const localizedCat = getLocalizedContent(category, locale)
   const catId = category.id
   const catName = localizedCat.data?.name || localizedCat.title || slug
+  const categorySeo = category.data?.seo || {}
 
   // Get all products and filter by category
   const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
@@ -2881,7 +2892,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
     </a>
   `}).join('') || `<p class="col-span-3 text-gray-400">${t(locale, 'detail.noProducts')}</p>`
 
-  return c.html(wrapHTML(catName, `
+  return c.html(wrapHTML(categorySeo.title || catName, `
     <section class="py-12 px-4">
       <div class="max-w-7xl mx-auto">
         <a href="/${locale}/categories" class="text-purple-400 mb-4 inline-block">${t(locale, 'detail.backCategories')}</a>
@@ -2897,7 +2908,8 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
       </div>
     </section>
   `, locale, `/${locale}/category/${slug}`, {
-    description: localizedCat.data?.description || `${catName} gaming gear reviews and recommendations.`,
+    description: categorySeo.description || localizedCat.data?.description || `${catName} gaming gear reviews and recommendations.`,
+    keywords: categorySeo.keywords,
     schemaType: 'ItemList',
     schemaData: { name: catName, items: filteredProducts }
   }))
