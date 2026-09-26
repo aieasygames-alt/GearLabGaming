@@ -990,24 +990,28 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
         "@type": "WebPage",
         "@id": canonicalUrl
       },
-      "image": productImage,
       "brand": {
         "@type": "Brand",
         "name": data.data?.brand || ''
-      },
-      "offers": purchaseUrl ? {
+      }
+    }
+    if (productImage) schema.image = productImage
+    if (purchaseUrl) {
+      schema.offers = {
         "@type": "Offer",
         "url": purchaseUrl,
         "price": data.data?.price || 0,
         "priceCurrency": "USD"
-      } : undefined,
-      "aggregateRating": data.data?.rating?.overall ? {
+      }
+    }
+    if (data.data?.rating?.overall) {
+      schema.aggregateRating = {
         "@type": "AggregateRating",
         "ratingValue": data.data.rating.overall,
         "bestRating": 10,
         "worstRating": 0,
         "ratingCount": 1
-      } : undefined
+      }
     }
     if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
       return JSON.stringify([
