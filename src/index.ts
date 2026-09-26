@@ -1120,7 +1120,9 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   const hreflangTags = getHreflangTags(path)
   const canonicalPath = path.replace(/^\/[a-z]{2}/, '')
   const canonicalUrl = `${BASE_URL}/${locale}${canonicalPath}`
-  const documentTitle = /\|\s*GearLabGaming\s*$/i.test(title) ? title : `${title} | GearLabGaming`
+  const titleWithBrand = /\|\s*GearLabGaming\s*$/i.test(title) ? title : `${title} | GearLabGaming`
+  // Keep long, query-focused titles intact instead of truncating their keywords.
+  const documentTitle = titleWithBrand.length > 65 ? title : titleWithBrand
 
   // Generate Schema.org
   const schemaOrg = seo.schemaType
