@@ -16,6 +16,8 @@
     "seed:seo": "tsx scripts/seed-seo-content.ts",
     "upgrade:content": "tsx scripts/upgrade-indexable-content.ts",
     "add:chairs-desks": "tsx scripts/add-chairs-desks-content.ts",
+    "indexnow:submit": "tsx scripts/submit-indexnow.ts",
+    "audit:meta": "tsx scripts/audit-meta-descriptions.ts",
     "update:affiliate": "tsx scripts/update-affiliate-links.ts"
   },
   "dependencies": {

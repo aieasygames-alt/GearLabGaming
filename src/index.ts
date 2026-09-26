@@ -17,6 +17,7 @@ import authorsCollection from './collections/authors.collection'
 import priceHistoryCollection from './collections/price-history.collection'
 import commentsCollection from './collections/comments.collection'
 import { toSonicCollectionConfig } from './collection-config'
+import { INDEXNOW_KEY, INDEXNOW_KEY_PATH } from './indexnow'
 
 // Register all custom collections
 registerCollections([
@@ -1284,6 +1285,13 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString(), version: '1.0.0' })
 })
 
+// IndexNow verifies that this public file contains the key before accepting
+// notifications for URLs on this host.
+app.get(INDEXNOW_KEY_PATH, (c) => c.text(INDEXNOW_KEY, 200, {
+  'Cache-Control': 'public, max-age=31536000, immutable',
+  'Content-Type': 'text/plain; charset=utf-8'
+}))
+
 app.get('/api/info', (c) => {
   return c.json({
     name: 'GearLabGaming API',
@@ -1306,7 +1314,7 @@ const renderAbout = (locale: Locale) => wrapHTML('About GearLabGaming', `
       <p>Retail links may earn a commission, but commissions do not change ratings, rankings, or recommendations. See our <a href="/${locale}/affiliate-disclosure">affiliate disclosure</a>.</p>
     </div></section>
   `, locale, `/${locale}/about`, {
-    description: 'Learn how GearLabGaming evaluates gaming gear and maintains editorial independence.'
+    description: 'Learn how GearLabGaming evaluates gaming gear with repeatable criteria for performance, comfort, build quality, features, compatibility, value, and editorial independence.'
   })
 
 app.get('/about', (c) => c.html(renderAbout('en')))
@@ -1323,7 +1331,7 @@ const renderDisclosure = (locale: Locale) => wrapHTML('Affiliate Disclosure', `
       <p>Prices and availability can change at the retailer. Verify the final price, seller, warranty, and return policy before purchase.</p>
     </div></section>
   `, locale, `/${locale}/affiliate-disclosure`, {
-    description: 'GearLabGaming affiliate disclosure and editorial independence policy.'
+    description: 'Read GearLabGaming\'s affiliate disclosure, including how retail commissions work, how recommendations remain independent, and what to check before buying gaming gear.'
   })
 
 app.get('/affiliate-disclosure', (c) => c.html(renderDisclosure('en')))
@@ -2187,6 +2195,8 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
       })();
     </script>
   `, locale, `/${locale}/products`, {
+    description: 'Browse independent gaming gear reviews with practical ratings, pros, cons, prices, and buying guidance for mice, keyboards, headsets, monitors, chairs, and desks.',
+    keywords: 'gaming gear reviews, gaming mouse reviews, gaming keyboard reviews, gaming headset reviews, gaming monitor reviews',
     robots: categoryFilter || brandFilter || priceMin > 0 || priceMax < 9999 || ratingMin > 0 || sortBy !== 'newest'
       ? 'noindex,follow'
       : undefined
@@ -2232,14 +2242,21 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
     .filter((item: any) => isIndexableProduct(item) && item.slug !== p.slug && !PRODUCT_SLUG_REDIRECTS[item.slug] && areSameCategory(item.data?.category, p.data?.category, allCategories))
     .sort((a: any, b: any) => (b.data?.rating?.overall || 0) - (a.data?.rating?.overall || 0))
     .slice(0, 3)
-  const productCategory = String(p.data?.category || '').replace(/^cat-/, '')
+  const productCategorySlug = getCategorySlug(p.data?.category, allCategories)
+  const productCategory = allCategories.find((category: any) =>
+    getCategorySlug(category.data?.slug || category.slug, allCategories) === productCategorySlug
+  )
+  const productCategoryName = productCategory?.data?.name || productCategory?.title || productCategorySlug
 
   const productSeo = p.data?.seo || {}
 
   return c.html(wrapHTML(productSeo.title || localized.title, `
     <section class="py-12 px-4">
       <div class="max-w-4xl mx-auto">
-        <a href="/${locale}/products" class="text-purple-400 mb-4 inline-block">${t(locale, 'detail.backProducts')}</a>
+        <div class="flex flex-wrap gap-x-4 gap-y-2 mb-4 text-sm">
+          <a href="/${locale}/products" class="text-purple-400">${t(locale, 'detail.backProducts')}</a>
+          ${productCategorySlug ? `<a href="/${locale}/category/${productCategorySlug}" class="text-purple-400">Browse ${productCategoryName}</a>` : ''}
+        </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
           <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
@@ -2538,6 +2555,8 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
       </div>
     </section>
   `, locale, `/${locale}/articles`, {
+    description: 'Read gaming gear buying guides, comparisons, and practical reviews covering FPS mice, keyboards, headsets, monitors, chairs, desks, and setup upgrades.',
+    keywords: 'gaming gear buying guides, gaming gear comparisons, gaming setup guides, gaming peripheral reviews',
     robots: hasUnsupportedFilters ? 'noindex,follow' : undefined
   }))
 })
@@ -2899,7 +2918,10 @@ app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">${categoriesHTML}</div>
       </div>
     </section>
-  `, locale, `/${locale}/categories`))
+  `, locale, `/${locale}/categories`, {
+    description: 'Browse gaming gear categories for mice, keyboards, headsets, monitors, chairs, and desks, with independent reviews and buying guidance for every setup.',
+    keywords: 'gaming gear categories, gaming mice, gaming keyboards, gaming headsets, gaming monitors, gaming chairs, gaming desks'
+  }))
 })
 
 // ============================================
@@ -3078,7 +3100,10 @@ const renderHomepage = async (c: any, locale: Locale) => {
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">${articlesHTML}</div>
       </div>
     </section>
-  `, locale, `/${locale}`))
+  `, locale, `/${locale}`, {
+    description: 'Independent gaming gear reviews, comparisons, and buying guides for mice, keyboards, headsets, monitors, chairs, desks, and complete setups.',
+    keywords: 'gaming gear reviews, gaming gear comparisons, gaming buying guides, gaming peripherals'
+  }))
 }
 
 for (const locale of SUPPORTED_LOCALES) {

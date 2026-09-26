@@ -213,6 +213,24 @@ const articles: ArticleUpdate[] = [
 
 const productSeoUpdates: ProductSeoUpdate[] = [
   {
+    slug: 'keychron-q1-pro-review',
+    seo: {
+      title: 'Keychron Q1 Pro Review: Premium Wireless Keyboard',
+      description: 'Keychron Q1 Pro review covering aluminum build quality, QMK/VIA customization, wireless performance, typing sound, gaming suitability, and value.',
+      keywords: 'keychron q1 pro review, wireless mechanical keyboard, qmk via keyboard, aluminum gaming keyboard',
+      focusKeyword: 'keychron q1 pro review'
+    }
+  },
+  {
+    slug: 'asus-rog-swift-oled-pg27aqdm-review',
+    seo: {
+      title: 'ASUS PG27AQDM Review: 1440p 240Hz OLED Gaming',
+      description: 'ASUS PG27AQDM review covering 1440p 240Hz OLED motion, response times, HDR, burn-in considerations, gaming features, and overall value.',
+      keywords: 'asus pg27aqdm review, 1440p 240hz oled gaming monitor, oled gaming monitor, rog swift oled',
+      focusKeyword: 'asus pg27aqdm review'
+    }
+  },
+  {
     slug: 'endgame-gear-xm2we-review',
     seo: {
       title: 'Endgame Gear XM2we Review: Wireless Claw Mouse',
