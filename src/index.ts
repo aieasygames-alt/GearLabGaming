@@ -2938,9 +2938,10 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
 
   const productsHTML = filteredProducts.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
+    const image = Array.isArray(p.data?.images) ? p.data.images[0] : null
     return `
     <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
-      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-6xl">${getCategoryIcon(p.data?.category)}</div>
+      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${image}" alt="${localized.title}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
       <div class="p-4">
         <span class="text-sm text-purple-400">${p.data?.brand || ''}</span>
         <h3 class="font-bold mt-1">${localized.title}</h3>
