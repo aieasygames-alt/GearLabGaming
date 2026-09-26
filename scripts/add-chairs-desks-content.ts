@@ -31,6 +31,7 @@ const products: Product[] = [
       category: 'cat-chairs-001',
       price: 549,
       priceRange: 'ultra-premium',
+      images: ['/media/products/secretlab-titan-evo-review.webp'],
       specs: {
         connectivity: 'wired',
         additionalSpecs: 'Available in Small, Regular, and XL sizes; 4-way L-ADAPT lumbar support; magnetic memory-foam head pillow options vary by configuration.'
