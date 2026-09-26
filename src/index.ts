@@ -1037,11 +1037,18 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       "image": toAbsoluteUrl(data.data?.featuredImage)
     }
     if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
-      schema.mainEntity = data.data.faq.map((item: any) => ({
-        "@type": "Question",
-        "name": item.question,
-        "acceptedAnswer": { "@type": "Answer", "text": item.answer }
-      }))
+      return JSON.stringify([
+        schema,
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": data.data.faq.map((item: any) => ({
+            "@type": "Question",
+            "name": item.question,
+            "acceptedAnswer": { "@type": "Answer", "text": item.answer }
+          }))
+        }
+      ])
     }
     return JSON.stringify(schema)
   }
@@ -2738,6 +2745,13 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
                 ${contentWithIds || `<p class="text-gray-400">${t(locale, 'detail.contentSoon')}</p>`}
               </div>
             </div>
+
+            ${Array.isArray(a.data?.faq) && a.data.faq.length > 0 ? `
+            <section class="mt-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6 md:p-8">
+              <h2 class="text-2xl font-bold mb-5">Frequently asked questions</h2>
+              <div class="space-y-5">${a.data.faq.map((item: any) => `<div><h3 class="font-semibold text-white">${item.question || ''}</h3><p class="mt-2 text-gray-300 leading-relaxed">${item.answer || ''}</p></div>`).join('')}</div>
+            </section>
+            ` : ''}
 
             <!-- Tags -->
             ${tags.length > 0 ? `

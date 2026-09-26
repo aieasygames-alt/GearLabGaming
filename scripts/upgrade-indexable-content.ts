@@ -44,6 +44,15 @@ type CategorySeoUpdate = {
   seo: Seo
 }
 
+type GscArticleUpdate = {
+  slug: string
+  seo: Seo
+  excerpt: string
+  quickVerdict: { summary: string }
+  faq: Array<{ question: string; answer: string }>
+  content?: string
+}
+
 const products: ProductUpdate[] = [
   {
     slug: 'wooting-60he-review',
@@ -282,6 +291,72 @@ const categorySeoUpdates: CategorySeoUpdate[] = [
   }
 ]
 
+const gscArticleUpdates: GscArticleUpdate[] = [
+  {
+    slug: 'wooting-60he-vs-razer-huntsman-v3-pro',
+    seo: {
+      title: 'Wooting 60HE vs Razer Huntsman V3 Pro: Which to Buy?',
+      description: 'Wooting 60HE vs Razer Huntsman V3 Pro: compare Rapid Trigger, adjustable actuation, software, layout, typing, and which keyboard fits your setup.',
+      keywords: 'wooting vs razer huntsman v3 pro, razer huntsman v3 pro vs wooting 60he, wooting vs razer, rapid trigger keyboard comparison',
+      focusKeyword: 'wooting 60he vs razer huntsman v3 pro'
+    },
+    excerpt: 'Wooting 60HE vs Razer Huntsman V3 Pro: choose Wooting for a compact 60% layout and deep actuation control, or Razer for a larger layout and ecosystem fit.',
+    quickVerdict: {
+      summary: 'Choose the Wooting 60HE for a compact 60% board and deep per-key actuation control. Choose the Razer Huntsman V3 Pro when a larger layout, media controls, or the Razer ecosystem matters more than desk space.'
+    },
+    faq: [
+      {
+        question: 'Is Wooting 60HE better than Razer Huntsman V3 Pro for FPS?',
+        answer: 'Both support adjustable actuation and Rapid Trigger-style behavior. Wooting is the stronger fit when you want a compact layout and detailed configuration; Razer is the stronger fit when you need a larger layout or prefer its ecosystem.'
+      },
+      {
+        question: 'Does the Razer Huntsman V3 Pro have Rapid Trigger?',
+        answer: 'The Huntsman V3 Pro supports Razer Rapid Trigger. It should be configured conservatively at first, especially on movement keys, to avoid accidental inputs from overly sensitive settings.'
+      },
+      {
+        question: 'Should I buy a 60% or full-size analog keyboard?',
+        answer: 'Choose a 60% layout when you value extra mouse room and can use layers for navigation. Choose TKL or full-size when dedicated arrows, navigation, numpad, or media controls matter in your regular workflow.'
+      },
+      {
+        question: 'Which keyboard has better software, Wooting or Razer?',
+        answer: 'Wootility is focused on keyboard tuning and per-key actuation controls. Razer Synapse is useful when you already use Razer devices and want ecosystem integration. The better option is the workflow you will actually keep configured.'
+      }
+    ]
+  },
+  {
+    slug: 'best-gaming-mouse-for-small-hands-2026',
+    seo: {
+      title: 'Best Gaming Mouse for Small Hands: Claw and Fingertip Picks',
+      description: 'Find the best gaming mouse for small hands with claw and fingertip picks, fit guidance by hand size, lightweight options, and a practical budget choice.',
+      keywords: 'best gaming mouse for small hands, best small gaming mouse, claw grip mouse for small hands, fingertip gaming mouse',
+      focusKeyword: 'best gaming mouse for small hands'
+    },
+    excerpt: 'The best gaming mouse for small hands depends on grip: choose a compact low-weight shell for fingertip, a supported hump for claw, and shape before headline specifications.',
+    quickVerdict: {
+      summary: 'For small hands, begin with shape and grip: the Viper Mini Signature Edition suits premium fingertip and claw use, the Pulsar X2V2 Mini is a lighter-value option, and the Logitech G305 remains the practical budget wireless pick.'
+    },
+    faq: [
+      {
+        question: 'What hand size is considered small for a gaming mouse?',
+        answer: 'A useful starting point is hand length under about 17 cm, measured from wrist crease to middle fingertip. Shell width, hump placement, and grip style still matter as much as length.'
+      },
+      {
+        question: 'What is the best grip for small hands?',
+        answer: 'Fingertip grip often benefits from a short, low shell, while claw grip can benefit from a supportive rear hump and narrow waist. Neither grip is universally better; choose the one that lets you move and reset aim without squeezing the shell.'
+      },
+      {
+        question: 'Should a small gaming mouse be lightweight?',
+        answer: 'Lower weight can make repeated aim adjustments easier, but it cannot fix a poor shape. Confirm the shell fits your grip first, then compare weight, buttons, and wireless reliability.'
+      },
+      {
+        question: 'Is the Logitech G305 good for small hands?',
+        answer: 'The G305 can suit relaxed claw and palm-claw users with small to medium hands. Its main trade-off is weight, so aggressive fingertip players may prefer a lighter compact mouse.'
+      }
+    ],
+    content: `<h2>Quick Verdict</h2><p>The best gaming mouse for small hands depends on grip and shell shape before any specification. The <strong>Razer Viper Mini Signature Edition</strong> is a premium compact option for fingertip and claw users, the <strong>Pulsar X2V2 Mini</strong> is a lighter-value alternative, and the <strong>Logitech G305</strong> remains a dependable budget wireless choice for relaxed claw users.</p><h2>Choose by hand size and grip</h2><p>Measure hand length from the wrist crease to the tip of the middle finger, then note whether your palm rests on the rear hump. For hands under about 17 cm, a shorter shell, reachable side buttons, and a manageable grip width are usually more important than a high DPI figure.</p><h3>Fingertip grip</h3><p>Fingertip users often prefer a short, low, lightweight shell that leaves room for the fingers to make small corrections. A tall rear hump can feel restrictive when the palm does not rest on the mouse.</p><h3>Claw grip</h3><p>Claw users may prefer a compact mouse with a supportive rear section and a narrower waist. The goal is stability without forcing the hand to grip too tightly during aim resets.</p><h2>Our top picks</h2><h3>1. Razer Viper Mini Signature Edition - Premium compact pick</h3><p>The Viper Mini Signature Edition is best suited to players who already know they prefer a very light, compact shell. Its small format works especially well for fingertip and claw styles, but the premium price means fit should come before materials or specification headlines.</p><h3>2. Pulsar X2V2 Mini - Lightweight value pick</h3><p>The Pulsar X2V2 Mini gives small-hand claw and fingertip players a lighter alternative at a more accessible price. Compare its hump and side shape with your current mouse, because small differences in support can matter more than the sensor generation.</p><h3>3. Logitech G305 Lightspeed - Budget wireless pick</h3><p>The G305 offers dependable wireless performance and long battery life. Its rounded shell works for relaxed claw and palm-claw use, while its heavier AA-powered design makes it less ideal for players who prioritize the lightest possible fingertip movement.</p><h2>Buying guide: what matters most</h2><h3>Shape before sensor specifications</h3><p>Most current gaming sensors are accurate enough for everyday and competitive use. A shape that reaches your side buttons comfortably and lets you reset aim without tension is more likely to improve your experience than moving from one high-DPI specification to another.</p><h3>Weight after fit</h3><p>Lower weight can help with repeated target switches and tracking, but an ultralight mouse with the wrong hump or width will still feel uncomfortable. Confirm shape first, then use weight as a tie-breaker.</p><h3>Use a return policy when changing shapes</h3><p>Mouse fit is personal. When moving from a larger or heavier shell, a reasonable return policy is more useful than trying to infer comfort from dimensions alone.</p><h2>Conclusion</h2><p>For most small-hand players, start by matching the mouse to your grip. The Viper Mini Signature Edition is the specialist premium choice, the X2V2 Mini is a strong lightweight-value route, and the G305 remains a reliable budget alternative when battery life and price lead the decision.</p>`
+  }
+]
+
 const statements = [
   ...products.map((product) => `UPDATE content SET data = json_set(data,
     '$.reviewContent', '${esc(product.reviewContent)}',
@@ -303,11 +378,19 @@ const statements = [
   ...categorySeoUpdates.map((category) => `UPDATE content SET data = json_set(data,
     '$.seo', json('${json(category.seo)}'),
     '$.updatedAt', ${now}
-  ), updated_at = ${now} WHERE collection_id = '${collections.categories}' AND slug = '${esc(category.slug)}';`)
+  ), updated_at = ${now} WHERE collection_id = '${collections.categories}' AND slug = '${esc(category.slug)}';`),
+  ...gscArticleUpdates.map((article) => `UPDATE content SET data = json_set(data,
+    '$.seo', json('${json(article.seo)}'),
+    '$.excerpt', '${esc(article.excerpt)}',
+    '$.quickVerdict', json('${json(article.quickVerdict)}'),
+    '$.faq', json('${json(article.faq)}')${article.content ? `,
+    '$.content', '${esc(article.content)}'` : ''},
+    '$.updatedAt', ${now}
+  ), updated_at = ${now} WHERE collection_id = '${collections.articles}' AND slug = '${esc(article.slug)}';`)
 ]
 
 execFileSync('npx', [
   'wrangler', 'd1', 'execute', 'DB', local ? '--local' : '--remote', '--command', statements.join('\n')
 ], { stdio: 'inherit' })
 
-console.log(`Updated ${products.length} product reviews, ${articles.length} articles, ${productSeoUpdates.length} product SEO records, and ${categorySeoUpdates.length} categories (${local ? 'local' : 'remote'} D1).`)
+console.log(`Updated ${products.length} product reviews, ${articles.length} articles, ${productSeoUpdates.length} product SEO records, ${categorySeoUpdates.length} categories, and ${gscArticleUpdates.length} GSC-priority articles (${local ? 'local' : 'remote'} D1).`)
