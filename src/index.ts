@@ -1009,6 +1009,20 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
         "ratingCount": 1
       } : undefined
     }
+    if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
+      return JSON.stringify([
+        schema,
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": data.data.faq.map((item: any) => ({
+            "@type": "Question",
+            "name": item.question,
+            "acceptedAnswer": { "@type": "Answer", "text": item.answer }
+          }))
+        }
+      ])
+    }
     return JSON.stringify(schema)
   }
 

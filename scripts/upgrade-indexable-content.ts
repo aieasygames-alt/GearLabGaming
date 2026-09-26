@@ -53,6 +53,12 @@ type GscArticleUpdate = {
   content?: string
 }
 
+type GscProductUpdate = {
+  slug: string
+  reviewContent: string
+  faq: Array<{ question: string; answer: string }>
+}
+
 const products: ProductUpdate[] = [
   {
     slug: 'wooting-60he-review',
@@ -357,6 +363,54 @@ const gscArticleUpdates: GscArticleUpdate[] = [
   }
 ]
 
+const gscProductUpdates: GscProductUpdate[] = [
+  {
+    slug: 'razer-huntsman-v3-pro-review',
+    reviewContent: `<h2>Who the Huntsman V3 Pro is for</h2><p>The Razer Huntsman V3 Pro is a gaming-first keyboard for players who want adjustable actuation, Rapid Trigger, and a larger layout than a compact 60% board. Its best case is a setup where dedicated keys, media controls, and the Razer ecosystem are as important as competitive movement settings.</p><h2>Rapid Trigger and actuation</h2><p>Its analog optical switches let users adjust actuation and Rapid Trigger behavior. The practical benefit is faster reset behavior for movement keys in games that reward quick direction changes. Start with moderate settings and adjust movement keys first; extremely sensitive profiles can create accidental inputs.</p><h2>Layout and everyday use</h2><p>Compared with a 60% keyboard, the Huntsman V3 Pro gives more room for navigation, media, and work tasks. That makes it easier to use away from games, though it takes more desk space. Buyers should decide whether that convenience is worth the smaller mouse area compared with a compact board.</p><h2>Software and ecosystem</h2><p>Razer Synapse is useful for players who already use Razer peripherals and want settings in one place. It also adds an ecosystem dependency that is unnecessary for buyers who prefer a simpler keyboard-only workflow. The right choice depends on how much configuration you intend to maintain after the initial setup.</p><h2>Alternatives</h2><p>The Wooting 60HE is a strong alternative for players who prioritize a compact layout and deep actuation tuning. Choose the Huntsman when its layout and ecosystem match your desk; choose Wooting when desk space and configuration flexibility lead the decision.</p><h2>Verdict</h2><p>The Huntsman V3 Pro is a capable analog keyboard with a more conventional layout than many performance-first rivals. It is best for players who will use both its competitive settings and its broader daily-work features.</p>`,
+    faq: [
+      { question: 'Is the Razer Huntsman V3 Pro good for FPS games?', answer: 'It is well suited to FPS players who want adjustable actuation and Rapid Trigger behavior. A sensible movement-key profile matters more than using the most sensitive setting everywhere.' },
+      { question: 'Is the Huntsman V3 Pro better than a 60% keyboard?', answer: 'It is better when you need dedicated navigation or media controls. A 60% board is better when desk space and mouse room are the priority.' },
+      { question: 'Should I choose Huntsman V3 Pro or Wooting 60HE?', answer: 'Choose Razer for a larger layout and ecosystem fit. Choose Wooting for a compact 60% layout and deeper keyboard-focused configuration.' }
+    ]
+  },
+  {
+    slug: 'pulsar-x2v2-mini-review',
+    reviewContent: `<h2>Who the X2V2 Mini is for</h2><p>The Pulsar X2V2 Mini is aimed at small-hand players who want a lightweight wireless mouse for claw or fingertip play. Its value comes from pairing a compact shell with low weight, not from claiming that one shape suits every grip.</p><h2>Shape and grip</h2><p>The short body and manageable grip width work best when fingers guide the mouse rather than the palm filling the shell. Claw and fingertip users are the most likely to benefit. Larger hands can use it with fingertip grip, but palm-grip buyers should compare a fuller shape first.</p><h2>Weight and wireless use</h2><p>Low weight helps repeated aim adjustments and fast target switches feel less effortful. Wireless performance is dependable for regular gaming use, so the purchase decision should come down to shape, button placement, and price rather than a minor specification difference.</p><h2>Value and alternatives</h2><p>The X2V2 Mini sits between budget wireless mice and premium specialist models. The Logitech G305 costs less but is substantially heavier; the Razer Viper Mini Signature Edition is more premium and more expensive. The Pulsar makes sense when compact fit and light weight are both priorities.</p><h2>Verdict</h2><p>The X2V2 Mini is a strong lightweight value option for small-hand claw and fingertip users. Confirm the hump and grip width suit you before buying, because shape determines long-term comfort.</p>`,
+    faq: [
+      { question: 'Is the Pulsar X2V2 Mini good for small hands?', answer: 'It is a strong option for small-hand claw and fingertip users because of its compact shell and low weight. Palm-grip users should compare a fuller shape first.' },
+      { question: 'What grip is the X2V2 Mini best for?', answer: 'Claw and fingertip grip are its most natural fits. Its short shell leaves room for finger adjustments without forcing full palm contact.' },
+      { question: 'Is the X2V2 Mini better than the Logitech G305?', answer: 'The Pulsar is lighter and better suited to aggressive claw or fingertip use. The G305 remains the more practical choice when price and long AA battery life matter most.' }
+    ]
+  },
+  {
+    slug: 'lamzu-atlantis-mini-review',
+    reviewContent: `<h2>Who the Atlantis Mini is for</h2><p>The Lamzu Atlantis Mini is a compact wireless mouse for small-hand claw and fingertip players. It should be evaluated on shell support, weight balance, and button reach rather than on a generic promise that ultralight mice are automatically faster.</p><h2>Shape and comfort</h2><p>Its compact dimensions are useful for players who find standard symmetrical mice too long or too wide. The rear support can work well for a claw grip, while the low weight keeps fingertip adjustments easy. Buyers with larger hands should assess whether the shell feels too short during long sessions.</p><h2>Performance and ownership</h2><p>Wireless performance and sensor behavior are reliable for regular competitive play. The more important long-term questions are click feel, coating preference, and whether the shell supports your natural grip without tension.</p><h2>Alternatives</h2><p>The Pulsar X2V2 Mini is a close lightweight alternative with a different shape profile. The Logitech G305 is the budget wireless option but carries more weight. Comparing dimensions and hump placement is more useful than comparing sensor marketing alone.</p><h2>Verdict</h2><p>The Atlantis Mini is a good compact choice for claw and fingertip users who want low weight without moving to a premium metal-shell mouse. It is worth shortlisting alongside the X2V2 Mini when shape fit is still uncertain.</p>`,
+    faq: [
+      { question: 'Is the Lamzu Atlantis Mini good for small hands?', answer: 'Yes, its compact dimensions and low weight make it a natural option for small-hand claw and fingertip users.' },
+      { question: 'Is the Atlantis Mini better for claw or fingertip grip?', answer: 'It can suit both, with its rear support often appealing to claw users and its low weight helping fingertip adjustments.' },
+      { question: 'What should I compare before buying the Atlantis Mini?', answer: 'Compare length, grip width, hump placement, side-button reach, and return policy against your current mouse.' }
+    ]
+  },
+  {
+    slug: 'endgame-gear-xm2we-review',
+    reviewContent: `<h2>Who the XM2we is for</h2><p>The Endgame Gear XM2we is a wireless symmetrical mouse aimed at players who prefer a stable claw-oriented shape over the smallest or lightest possible shell. Its main appeal is controlled support through the rear of the hand while keeping wireless use straightforward.</p><h2>Shape and claw support</h2><p>The shell is better suited to claw grip than to a fully relaxed palm grip. Its rear profile gives the hand a consistent contact point, which can make lift-and-reset movements feel more repeatable. Players who prefer a very low fingertip shell should compare smaller, flatter alternatives.</p><h2>Wireless performance and clicks</h2><p>Wireless performance is dependable for day-to-day and competitive play. Click preference is personal, so it should be evaluated alongside shell shape rather than treated as a standalone reason to buy. A mouse that supports your grip comfortably is more valuable than a small specification advantage.</p><h2>Alternatives</h2><p>The Pulsar X2V2 Mini and Lamzu Atlantis Mini suit buyers who want a shorter, lighter small-hand shell. The XM2we is the better fit when claw support and a more stable rear profile matter more than minimum dimensions.</p><h2>Verdict</h2><p>The XM2we is a solid wireless claw-grip option with a shape-first value proposition. It is best for players who want stable support rather than an ultralight fingertip-focused feel.</p>`,
+    faq: [
+      { question: 'What grip is the Endgame Gear XM2we best for?', answer: 'It is best suited to claw grip because of its stable rear support and symmetrical shell profile.' },
+      { question: 'Is the XM2we good for small hands?', answer: 'It can work for small to medium hands using claw grip, but buyers who want a shorter shell should compare compact options such as the X2V2 Mini or Atlantis Mini.' },
+      { question: 'Should I choose XM2we or a lighter mini mouse?', answer: 'Choose XM2we for a more supported claw shape. Choose a lighter mini mouse when fingertip freedom and minimum dimensions are the priority.' }
+    ]
+  },
+  {
+    slug: 'hyperx-cloud-iii-wireless-review',
+    reviewContent: `<h2>Who the Cloud III Wireless is for</h2><p>The HyperX Cloud III Wireless is a comfort-first wireless headset for PC and multi-platform players who need dependable connection, clear voice chat, and a headset they can wear for long sessions. Its case is stronger when fit and battery routine matter more than advanced base-station features.</p><h2>Comfort and long sessions</h2><p>Headset comfort is personal, but pad depth, headband pressure, and clamping force matter more over time than a single sound-profile setting. The Cloud III Wireless is a sensible option for buyers who prioritize a familiar, cushioned fit. Use a retailer with returns if headset pressure is a concern.</p><h2>Sound and microphone</h2><p>Its sound is suitable for games, chat, and general media, with EQ preferences depending on game type and personal taste. The microphone is designed for clear team communication rather than studio recording. Check your platform and connection requirements before purchase.</p><h2>Battery and alternatives</h2><p>A straightforward wireless battery routine is easier to live with than a feature-heavy system you will not use. Buyers who need frequent device switching, active noise cancellation, or swappable batteries should compare premium alternatives such as the Arctis Nova Pro Wireless.</p><h2>Verdict</h2><p>The Cloud III Wireless is a practical choice for players who want comfort, reliable wireless use, and uncomplicated chat. It is a better value fit than premium alternatives when its simpler feature set matches your setup.</p>`,
+    faq: [
+      { question: 'Is HyperX Cloud III Wireless good for PC gaming?', answer: 'It is a strong fit for PC players who prioritize comfort, reliable wireless use, and clear team chat over premium multi-device features.' },
+      { question: 'Is the Cloud III Wireless comfortable for long sessions?', answer: 'It is designed around a cushioned, familiar headset fit, but comfort varies by head shape and glasses use. A retailer with returns is useful when fit is uncertain.' },
+      { question: 'Should I choose Cloud III Wireless or Arctis Nova Pro Wireless?', answer: 'Choose HyperX for a simpler comfort-first wireless headset. Choose SteelSeries when you will use its base station, multi-device switching, and hot-swappable battery system regularly.' }
+    ]
+  }
+]
+
 const statements = [
   ...products.map((product) => `UPDATE content SET data = json_set(data,
     '$.reviewContent', '${esc(product.reviewContent)}',
@@ -386,11 +440,16 @@ const statements = [
     '$.faq', json('${json(article.faq)}')${article.content ? `,
     '$.content', '${esc(article.content)}'` : ''},
     '$.updatedAt', ${now}
-  ), updated_at = ${now} WHERE collection_id = '${collections.articles}' AND slug = '${esc(article.slug)}';`)
+  ), updated_at = ${now} WHERE collection_id = '${collections.articles}' AND slug = '${esc(article.slug)}';`),
+  ...gscProductUpdates.map((product) => `UPDATE content SET data = json_set(data,
+    '$.reviewContent', '${esc(product.reviewContent)}',
+    '$.faq', json('${json(product.faq)}'),
+    '$.updatedAt', ${now}
+  ), updated_at = ${now} WHERE collection_id = '${collections.products}' AND slug = '${esc(product.slug)}';`)
 ]
 
 execFileSync('npx', [
   'wrangler', 'd1', 'execute', 'DB', local ? '--local' : '--remote', '--command', statements.join('\n')
 ], { stdio: 'inherit' })
 
-console.log(`Updated ${products.length} product reviews, ${articles.length} articles, ${productSeoUpdates.length} product SEO records, ${categorySeoUpdates.length} categories, and ${gscArticleUpdates.length} GSC-priority articles (${local ? 'local' : 'remote'} D1).`)
+console.log(`Updated ${products.length} product reviews, ${articles.length} articles, ${productSeoUpdates.length} product SEO records, ${categorySeoUpdates.length} categories, ${gscArticleUpdates.length} GSC-priority articles, and ${gscProductUpdates.length} GSC-priority products (${local ? 'local' : 'remote'} D1).`)
