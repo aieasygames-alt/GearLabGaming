@@ -1098,6 +1098,20 @@ interface SEOOptions {
   robots?: string
   schemaType?: 'Website' | 'Product' | 'Article' | 'ItemList'
   schemaData?: any
+  breadcrumbs?: Array<{ name: string; path: string }>
+}
+
+function generateBreadcrumbSchema(locale: Locale, breadcrumbs: Array<{ name: string; path: string }>): string {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbs.map((breadcrumb, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: breadcrumb.name,
+      item: `${BASE_URL}/${locale}${breadcrumb.path}`
+    }))
+  })
 }
 
 // Helper: Common HTML wrapper with locale support and enhanced SEO
@@ -1112,6 +1126,10 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   const schemaOrg = seo.schemaType
     ? generateSchemaOrg(seo.schemaType, seo.schemaData, locale)
     : generateSchemaOrg('Website', null, locale)
+  const schemas = seo.breadcrumbs?.length
+    ? [...(Array.isArray(JSON.parse(schemaOrg)) ? JSON.parse(schemaOrg) : [JSON.parse(schemaOrg)]), JSON.parse(generateBreadcrumbSchema(locale, seo.breadcrumbs))]
+    : JSON.parse(schemaOrg)
+  const serializedSchemas = JSON.stringify(schemas)
 
   // Default meta description
   const metaDescription = seo.description || TRANSLATIONS[locale].home.subtitle
@@ -1163,7 +1181,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   ${hreflangTags}
 
   <!-- Schema.org Structured Data -->
-  <script type="application/ld+json">${escapeJsonForHtml(schemaOrg)}</script>
+  <script type="application/ld+json">${escapeJsonForHtml(serializedSchemas)}</script>
 
   <!-- Styles -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -2254,6 +2272,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
     <section class="py-12 px-4">
       <div class="max-w-4xl mx-auto">
         <div class="flex flex-wrap gap-x-4 gap-y-2 mb-4 text-sm">
+          <a href="/${locale}" class="text-purple-400">${t(locale, 'nav.home')}</a>
           <a href="/${locale}/products" class="text-purple-400">${t(locale, 'detail.backProducts')}</a>
           ${productCategorySlug ? `<a href="/${locale}/category/${productCategorySlug}" class="text-purple-400">Browse ${productCategoryName}</a>` : ''}
         </div>
@@ -2510,7 +2529,13 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
     type: 'product',
     robots: isIndexableProduct(p) ? undefined : 'noindex,follow',
     schemaType: 'Product',
-    schemaData: p
+    schemaData: p,
+    breadcrumbs: [
+      { name: 'Home', path: '' },
+      { name: 'Products', path: '/products' },
+      ...(productCategorySlug ? [{ name: productCategoryName, path: `/category/${productCategorySlug}` }] : []),
+      { name: localized.title, path: `/product/${slug}` }
+    ]
   }))
 })
 
@@ -2654,6 +2679,11 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
   }
 
   const articleSeo = a.data?.seo || {}
+  const articleCategorySlug = getCategorySlug(a.data?.category, allCategories)
+  const articleCategory = allCategories.find((category: any) =>
+    getCategorySlug(category.data?.slug || category.slug, allCategories) === articleCategorySlug
+  )
+  const articleCategoryName = articleCategory?.data?.name || articleCategory?.title || articleCategorySlug
 
   return c.html(wrapHTML(articleSeo.title || localized.title, `
     <article class="py-12 px-4">
@@ -2663,6 +2693,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
           <a href="/${locale}" class="text-gray-400 hover:text-purple-400">${t(locale, 'nav.home')}</a>
           <span class="mx-2 text-gray-600">/</span>
           <a href="/${locale}/articles" class="text-gray-400 hover:text-purple-400">${t(locale, 'nav.articles')}</a>
+          ${articleCategorySlug ? `<span class="mx-2 text-gray-600">/</span><a href="/${locale}/category/${articleCategorySlug}" class="text-gray-400 hover:text-purple-400">${articleCategoryName}</a>` : ''}
           <span class="mx-2 text-gray-600">/</span>
           <span class="text-gray-300">${localized.title.substring(0, 50)}...</span>
         </nav>
@@ -2888,7 +2919,13 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     type: 'article',
     robots: isIndexableArticle(a) ? undefined : 'noindex,follow',
     schemaType: 'Article',
-    schemaData: a
+    schemaData: a,
+    breadcrumbs: [
+      { name: 'Home', path: '' },
+      { name: 'Articles', path: '/articles' },
+      ...(articleCategorySlug ? [{ name: articleCategoryName, path: `/category/${articleCategorySlug}` }] : []),
+      { name: localized.title, path: `/article/${slug}` }
+    ]
   }))
 })
 
@@ -2994,7 +3031,12 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
     description: categorySeo.description || localizedCat.data?.description || `${catName} gaming gear reviews and recommendations.`,
     keywords: categorySeo.keywords,
     schemaType: 'ItemList',
-    schemaData: { name: catName, items: filteredProducts }
+    schemaData: { name: catName, items: filteredProducts },
+    breadcrumbs: [
+      { name: 'Home', path: '' },
+      { name: 'Categories', path: '/categories' },
+      { name: catName, path: `/category/${slug}` }
+    ]
   }))
 })
 const renderHomepage = async (c: any, locale: Locale) => {
