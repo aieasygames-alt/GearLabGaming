@@ -84,6 +84,7 @@ const products: Product[] = [
       category: 'cat-chairs-001',
       price: 999,
       priceRange: 'ultra-premium',
+      images: ['/media/products/secretlab-magnus-pro-xl-review.webp'],
       specs: {
         dimensions: '1770 x 670 mm desktop surface',
         connectivity: 'wired',
@@ -102,7 +103,7 @@ const products: Product[] = [
       ],
       verdict: 'The Secretlab MAGNUS Pro XL is a premium sit-stand gaming desk with standout cable management and space for larger setups, but its price makes the most sense when you will use its integrated ecosystem.',
       bestFor: ['premium'],
-      affiliateLinks: { official: 'https://secretlab.co/products/magnus-pro' },
+      affiliateLinks: { official: 'https://secretlab.co/products/magnus-pro?sku=4MPB2-B15B-STELH' },
       buyingNotes: [
         'Measure room clearance, delivery route, and monitor-arm footprint before choosing the XL size.',
         'Price the desk with the cable and monitor accessories you actually intend to use.',
