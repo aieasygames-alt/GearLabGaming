@@ -2991,11 +2991,18 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   const catName = localizedCat.data?.name || localizedCat.title || slug
   const categorySeo = category.data?.seo || {}
 
-  // Get all products and filter by category
-  const allProducts = await getContent(db, COLLECTIONS.products, { limit: 100 })
+  // Connect category hubs to both commercial reviews and supporting editorial content.
+  const [allProducts, allArticles] = await Promise.all([
+    getContent(db, COLLECTIONS.products, { limit: 100 }),
+    getContent(db, COLLECTIONS.articles, { limit: 100 })
+  ])
   const filteredProducts = allProducts.filter((p: any) => {
     return isIndexableProduct(p) && !PRODUCT_SLUG_REDIRECTS[p.slug] && areSameCategory(p.data?.category, slug, allCategories)
   })
+  const categoryArticles = allArticles
+    .filter((article: any) => isIndexableArticle(article) && !ARTICLE_SLUG_REDIRECTS[article.slug] && areSameCategory(article.data?.category, slug, allCategories))
+    .sort((left: any, right: any) => Number(right.updated_at || right.created_at || 0) - Number(left.updated_at || left.created_at || 0))
+    .slice(0, 4)
 
   const productsHTML = filteredProducts.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
@@ -3014,6 +3021,15 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
     </a>
   `}).join('') || `<p class="col-span-3 text-gray-400">${t(locale, 'detail.noProducts')}</p>`
 
+  const articlesHTML = categoryArticles.map((article: any) => {
+    const localized = getLocalizedContent(article, locale)
+    return `<a href="/${locale}/article/${article.slug}" class="block rounded-xl border border-gray-700 bg-gray-800/50 p-5 hover:border-purple-500 hover:bg-gray-800 transition">
+      <span class="text-xs font-medium uppercase text-purple-400">${article.data?.type || 'article'}</span>
+      <h3 class="mt-2 font-bold text-white">${localized.title}</h3>
+      <p class="mt-2 text-sm text-gray-400 line-clamp-3">${localized.data?.excerpt || ''}</p>
+    </a>`
+  }).join('')
+
   return c.html(wrapHTML(categorySeo.title || catName, `
     <section class="py-12 px-4">
       <div class="max-w-7xl mx-auto">
@@ -3027,6 +3043,13 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
         </div>
         <h2 class="text-xl font-bold mb-6">${filteredProducts.length} ${t(locale, 'detail.productsCount')}</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">${productsHTML}</div>
+        ${categoryArticles.length > 0 ? `<section class="mt-16">
+          <div class="flex items-center justify-between gap-4 mb-6">
+            <h2 class="text-2xl font-bold">Guides and comparisons</h2>
+            <a href="/${locale}/articles" class="text-sm text-purple-400 hover:text-purple-300">Browse all articles →</a>
+          </div>
+          <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">${articlesHTML}</div>
+        </section>` : ''}
       </div>
     </section>
   `, locale, `/${locale}/category/${slug}`, {
