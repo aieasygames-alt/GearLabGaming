@@ -127,6 +127,7 @@ const productEnrichments: ProductEnrichment[] = [
 const articles = [
   {
     id: 'art-superlight-2-vs-x2v2-mini', slug: 'logitech-g-pro-x-superlight-2-vs-pulsar-x2v2-mini', title: 'Logitech G PRO X SUPERLIGHT 2 vs Pulsar X2V2 Mini', category: 'cat-mice', type: 'comparison', readingTime: 9,
+    featuredImage: '/media/articles/logitech-g-pro-x-superlight-2-vs-pulsar-x2v2-mini.webp',
     featuredProducts: ['prod-logitech-g-pro-x-superlight-2', 'prod-pulsar-x2v2-mini'],
     quickVerdict: { summary: 'Choose the SUPERLIGHT 2 for a safer medium shape; choose the X2V2 Mini for small-hand claw or fingertip value.', topPick: 'prod-logitech-g-pro-x-superlight-2', valuePick: 'prod-pulsar-x2v2-mini' },
     seo: { title: 'SUPERLIGHT 2 vs Pulsar X2V2 Mini', description: 'Compare Logitech G PRO X SUPERLIGHT 2 and Pulsar X2V2 Mini on shape, hand size, weight, wireless performance, FPS use, and value.', keywords: 'superlight 2 vs pulsar x2v2 mini, small gaming mouse, lightweight wireless mouse', focusKeyword: 'superlight 2 vs pulsar x2v2 mini' },
@@ -136,6 +137,7 @@ const articles = [
   },
   {
     id: 'art-lg-27gs95qe-vs-aw2723df', slug: 'lg-27gs95qe-b-vs-alienware-aw2723df', title: 'LG 27GS95QE-B vs Alienware AW2723DF', category: 'cat-monitors', type: 'comparison', readingTime: 10,
+    featuredImage: '/media/articles/lg-27gs95qe-b-vs-alienware-aw2723df.webp',
     featuredProducts: ['prod-lg-27gs95qe-b', 'prod-dell-alienware-aw2723df'],
     quickVerdict: { summary: 'Choose LG OLED for contrast and response time; choose Alienware IPS for 280Hz, bright-room use, and fewer static-content concerns.', topPick: 'prod-lg-27gs95qe-b', valuePick: 'prod-dell-alienware-aw2723df' },
     seo: { title: 'LG 27GS95QE-B vs Alienware AW2723DF', description: 'Compare LG 27GS95QE-B OLED and Alienware AW2723DF Fast IPS monitors on 1440p motion, HDR, contrast, 240Hz vs 280Hz, and desktop use.', keywords: 'lg 27gs95qe vs alienware aw2723df, oled vs ips gaming monitor, 1440p gaming monitor', focusKeyword: 'lg 27gs95qe vs alienware aw2723df' },
@@ -145,6 +147,7 @@ const articles = [
   },
   {
     id: 'art-best-wireless-gaming-headsets-2026', slug: 'best-wireless-gaming-headsets-2026', title: 'Best Wireless Gaming Headsets in 2026', category: 'cat-headsets', type: 'list', readingTime: 8,
+    featuredImage: '/media/articles/best-wireless-gaming-headsets-2026.webp',
     featuredProducts: ['prod-hyperx-cloud-iii-wireless', 'prod-arctis-nova-pro'],
     quickVerdict: { summary: 'HyperX Cloud III Wireless is the comfort-and-battery pick; Arctis Nova Pro Wireless is the premium multi-device choice.', topPick: 'prod-hyperx-cloud-iii-wireless', valuePick: 'prod-hyperx-cloud-iii-wireless' },
     seo: { title: 'Best Wireless Gaming Headsets in 2026', description: 'Find the best wireless gaming headset for comfort, battery life, microphone quality, PC and console compatibility, and premium multi-device features.', keywords: 'best wireless gaming headset 2026, long battery gaming headset, hyperx cloud iii wireless review', focusKeyword: 'best wireless gaming headset' },
