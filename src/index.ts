@@ -1102,6 +1102,7 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
   }
 
   if (type === 'ItemList' && data) {
+    const itemPath = data.itemPath || 'product'
     return JSON.stringify({
       "@context": "https://schema.org",
       "@type": "ItemList",
@@ -1110,8 +1111,8 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       "itemListElement": (data.items || []).map((item: any, index: number) => ({
         "@type": "ListItem",
         "position": index + 1,
-        "name": item.title,
-        "url": `${BASE_URL}/${locale}/${data.itemPath || 'product'}/${item.slug}`
+        "name": item.data?.name || item.title,
+        "url": `${BASE_URL}/${locale}/${itemPath}/${item.data?.slug || item.slug}`
       }))
     })
   }
@@ -2248,6 +2249,12 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
     description: 'Browse independent gaming gear reviews with practical ratings, pros, cons, prices, and buying guidance for mice, keyboards, headsets, monitors, chairs, and desks.',
     keywords: 'gaming gear reviews, gaming mouse reviews, gaming keyboard reviews, gaming headset reviews, gaming monitor reviews',
     image: getProductImage(products[0]),
+    schemaType: 'ItemList',
+    schemaData: { name: 'Gaming Gear Reviews', items: products, itemPath: 'product' },
+    breadcrumbs: [
+      { name: 'Home', path: '' },
+      { name: 'Products', path: '/products' }
+    ],
     robots: categoryFilter || brandFilter || priceMin > 0 || priceMax < 9999 || ratingMin > 0 || sortBy !== 'newest'
       ? 'noindex,follow'
       : undefined
@@ -2620,6 +2627,12 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
     description: 'Read gaming gear buying guides, comparisons, and practical reviews covering FPS mice, keyboards, headsets, monitors, chairs, desks, and setup upgrades.',
     keywords: 'gaming gear buying guides, gaming gear comparisons, gaming setup guides, gaming peripheral reviews',
     image: getArticleCover(articles[0]),
+    schemaType: 'ItemList',
+    schemaData: { name: 'Gaming Gear Buying Guides', items: articles, itemPath: 'article' },
+    breadcrumbs: [
+      { name: 'Home', path: '' },
+      { name: 'Articles', path: '/articles' }
+    ],
     robots: hasUnsupportedFilters ? 'noindex,follow' : undefined
   }))
 })
@@ -2989,7 +3002,13 @@ app.get('/:lang{en|zh|fr|es|ru}/categories', async (c) => {
     </section>
   `, locale, `/${locale}/categories`, {
     description: 'Browse gaming gear categories for mice, keyboards, headsets, monitors, chairs, and desks, with independent reviews and buying guidance for every setup.',
-    keywords: 'gaming gear categories, gaming mice, gaming keyboards, gaming headsets, gaming monitors, gaming chairs, gaming desks'
+    keywords: 'gaming gear categories, gaming mice, gaming keyboards, gaming headsets, gaming monitors, gaming chairs, gaming desks',
+    schemaType: 'ItemList',
+    schemaData: { name: 'Gaming Gear Categories', items: categories, itemPath: 'category' },
+    breadcrumbs: [
+      { name: 'Home', path: '' },
+      { name: 'Categories', path: '/categories' }
+    ]
   }))
 })
 
