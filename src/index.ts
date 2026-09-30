@@ -1310,18 +1310,17 @@ app.get('/', (c) => {
 app.use('*', async (c, next) => {
   const requestUrl = new URL(c.req.url)
   const normalizedPath = requestUrl.pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/'
-  const canonicalPath = normalizedPath.replace(/^\/(zh|fr|es|ru)(?=\/|$)/, `/${DEFAULT_LOCALE}`)
-  if (canonicalPath !== requestUrl.pathname) {
-    return c.redirect(`${canonicalPath}${requestUrl.search}`, 301)
+  if (normalizedPath !== requestUrl.pathname) {
+    return c.redirect(`${normalizedPath}${requestUrl.search}`, 301)
   }
   return next()
 })
 
-// Only English has complete editorial content today. Keep translated URLs out of
-// Google's index until their titles, descriptions, and body copy are localized.
+// Chinese product reviews now have editorial localization. French, Spanish, and
+// Russian still fall back to English until their content is translated.
 app.use('*', async (c, next) => {
   const requestUrl = new URL(c.req.url)
-  const match = requestUrl.pathname.match(/^\/(zh|fr|es|ru)(?=\/|$)/)
+  const match = requestUrl.pathname.match(/^\/(fr|es|ru)(?=\/|$)/)
   if (match) {
     const pathname = requestUrl.pathname.replace(/^\/(zh|fr|es|ru)(?=\/|$)/, `/${DEFAULT_LOCALE}`)
     return c.redirect(`${pathname}${requestUrl.search}`, 301)
