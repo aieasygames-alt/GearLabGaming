@@ -51,6 +51,7 @@ type GscArticleUpdate = {
   quickVerdict: { summary: string }
   faq: Array<{ question: string; answer: string }>
   content?: string
+  readingTime?: number
 }
 
 type GscProductUpdate = {
@@ -320,14 +321,14 @@ const gscArticleUpdates: GscArticleUpdate[] = [
   {
     slug: 'wooting-60he-vs-razer-huntsman-v3-pro',
     seo: {
-      title: 'Wooting 60HE vs Razer Huntsman V3 Pro: Which to Buy?',
-      description: 'Wooting 60HE vs Razer Huntsman V3 Pro: compare Rapid Trigger, adjustable actuation, software, layout, typing, and which keyboard fits your setup.',
-      keywords: 'wooting vs razer huntsman v3 pro, razer huntsman v3 pro vs wooting 60he, wooting vs razer, rapid trigger keyboard comparison',
+      title: 'Wooting vs Razer Huntsman V3 Pro: Which Keyboard Wins?',
+      description: 'Wooting vs Razer Huntsman V3 Pro: compare 60HE, 80HE and TKL layouts, Rapid Trigger, actuation, software, typing, and FPS value.',
+      keywords: 'wooting vs razer huntsman v3 pro, razer huntsman v3 pro vs wooting 60he, wooting 80he vs razer huntsman v3 pro tkl, wooting vs razer, rapid trigger keyboard comparison',
       focusKeyword: 'wooting 60he vs razer huntsman v3 pro'
     },
-    excerpt: 'Wooting 60HE vs Razer Huntsman V3 Pro: choose Wooting for a compact 60% layout and deep actuation control, or Razer for a larger layout and ecosystem fit.',
+    excerpt: 'Wooting vs Razer Huntsman V3 Pro: choose Wooting 60HE or 80HE for compact layout and deep tuning, or Razer for TKL space and ecosystem fit.',
     quickVerdict: {
-      summary: 'Choose the Wooting 60HE for a compact 60% board and deep per-key actuation control. Choose the Razer Huntsman V3 Pro when a larger layout, media controls, or the Razer ecosystem matters more than desk space.'
+      summary: 'Choose Wooting 60HE for maximum mouse room, Wooting 80HE for a more complete layout with deep tuning, or Razer Huntsman V3 Pro when its TKL layout and Razer ecosystem suit your desk better.'
     },
     faq: [
       {
@@ -345,15 +346,21 @@ const gscArticleUpdates: GscArticleUpdate[] = [
       {
         question: 'Which keyboard has better software, Wooting or Razer?',
         answer: 'Wootility is focused on keyboard tuning and per-key actuation controls. Razer Synapse is useful when you already use Razer devices and want ecosystem integration. The better option is the workflow you will actually keep configured.'
+      },
+      {
+        question: 'Should I choose Wooting 60HE, Wooting 80HE, or Razer Huntsman V3 Pro TKL?',
+        answer: 'Choose 60HE for the smallest footprint and maximum mouse room. Choose 80HE when you want more keys without giving up detailed Wootility controls. Choose the Huntsman V3 Pro TKL when its layout and Razer ecosystem are more useful than Wooting\'s tuning workflow.'
       }
-    ]
+    ],
+    readingTime: 11,
+    content: `<h2>Quick verdict: Wooting vs Razer Huntsman V3 Pro</h2><p>Choose <strong>Wooting 60HE</strong> when a compact 60% layout, maximum mouse room, and deep actuation tuning are the priorities. Choose <strong>Wooting 80HE</strong> when you want more everyday keys while keeping Wootility\'s configuration depth. Choose the <strong>Razer Huntsman V3 Pro</strong>, including its TKL option, when a larger layout and the Razer ecosystem fit your desk better.</p><h2>What actually separates these keyboards</h2><p>All three options target competitive players with adjustable actuation and rapid-reset behavior. The meaningful decision is layout, configuration workflow, and daily comfort. Rapid Trigger helps only when settings remain consistent enough to build muscle memory; overly shallow actuation can create accidental movement inputs.</p><h2>Wooting 60HE: best for compact FPS setups</h2><p>The 60HE is the strongest fit for low-sensitivity FPS players who need extra mouse room. Its 60% layout removes dedicated navigation and function keys, so it is best for buyers comfortable with layers. Wootility offers detailed per-key actuation controls and is especially useful for players who want to save stable competitive profiles.</p><h2>Wooting 80HE: best balance of keys and tuning</h2><p>The 80HE adds a more practical layout for users who work, browse, or play multiple genres at the same desk. It remains a Wooting choice because the software workflow and adjustable actuation controls are central to the experience. It is a stronger alternative to a TKL board when you value tuning depth over a broader peripheral ecosystem.</p><h2>Razer Huntsman V3 Pro: best for TKL layout and ecosystem</h2><p>The Huntsman V3 Pro is the practical choice when dedicated navigation keys, a familiar TKL layout, and Razer Synapse integration matter. It supports Razer Rapid Trigger and adjustable actuation, but it should be tuned gradually. Buy it for the full layout and ecosystem fit, not because a sensitivity setting alone guarantees better FPS movement.</p><h2>Rapid Trigger and actuation setup</h2><p>Start with conservative settings on movement keys, play with one stable profile for several sessions, then adjust only when a specific input feels slow or inconsistent. That approach is more useful than setting every key to minimum actuation depth. Layout comfort and repeatable profiles will usually matter more after the first week of use.</p><h2>Verdict</h2><p>For pure compact FPS use, choose Wooting 60HE. For a more complete Wooting layout, choose 80HE. For a TKL keyboard that fits an existing Razer setup, choose the Huntsman V3 Pro. None is the automatic winner without considering your desk space and daily workflow.</p>`
   },
   {
     slug: 'best-gaming-mouse-for-small-hands-2026',
     seo: {
-      title: 'Best Gaming Mouse for Small Hands: Claw and Fingertip Picks',
-      description: 'Find the best gaming mouse for small hands with claw and fingertip picks, fit guidance by hand size, lightweight options, and a practical budget choice.',
-      keywords: 'best gaming mouse for small hands, best small gaming mouse, claw grip mouse for small hands, fingertip gaming mouse',
+      title: 'Best Gaming Mouse for Small Hands in 2026: Top Picks',
+      description: 'Best gaming mouse for small hands in 2026: compare compact claw and fingertip picks, Pulsar X2V2 Mini, hand-size fit, lightweight options, and value.',
+      keywords: 'best gaming mouse for small hands 2026, best small gaming mouse, pulsar x2v2 mini, claw grip mouse for small hands, fingertip gaming mouse',
       focusKeyword: 'best gaming mouse for small hands'
     },
     excerpt: 'The best gaming mouse for small hands depends on grip: choose a compact low-weight shell for fingertip, a supported hump for claw, and shape before headline specifications.',
@@ -376,9 +383,46 @@ const gscArticleUpdates: GscArticleUpdate[] = [
       {
         question: 'Is the Logitech G305 good for small hands?',
         answer: 'The G305 can suit relaxed claw and palm-claw users with small to medium hands. Its main trade-off is weight, so aggressive fingertip players may prefer a lighter compact mouse.'
+      },
+      {
+        question: 'Is the Pulsar X2V2 Mini good for small hands?',
+        answer: 'The Pulsar X2V2 Mini is a strong compact option for small-hand claw and fingertip players who want a lighter wireless mouse. Compare its hump position with your current shape before buying.'
       }
     ],
     content: `<h2>Quick Verdict</h2><p>The best gaming mouse for small hands depends on grip and shell shape before any specification. The <strong>Razer Viper Mini Signature Edition</strong> is a premium compact option for fingertip and claw users, the <strong>Pulsar X2V2 Mini</strong> is a lighter-value alternative, and the <strong>Logitech G305</strong> remains a dependable budget wireless choice for relaxed claw users.</p><h2>Choose by hand size and grip</h2><p>Measure hand length from the wrist crease to the tip of the middle finger, then note whether your palm rests on the rear hump. For hands under about 17 cm, a shorter shell, reachable side buttons, and a manageable grip width are usually more important than a high DPI figure.</p><h3>Fingertip grip</h3><p>Fingertip users often prefer a short, low, lightweight shell that leaves room for the fingers to make small corrections. A tall rear hump can feel restrictive when the palm does not rest on the mouse.</p><h3>Claw grip</h3><p>Claw users may prefer a compact mouse with a supportive rear section and a narrower waist. The goal is stability without forcing the hand to grip too tightly during aim resets.</p><h2>Our top picks</h2><h3>1. Razer Viper Mini Signature Edition - Premium compact pick</h3><p>The Viper Mini Signature Edition is best suited to players who already know they prefer a very light, compact shell. Its small format works especially well for fingertip and claw styles, but the premium price means fit should come before materials or specification headlines.</p><h3>2. Pulsar X2V2 Mini - Lightweight value pick</h3><p>The Pulsar X2V2 Mini gives small-hand claw and fingertip players a lighter alternative at a more accessible price. Compare its hump and side shape with your current mouse, because small differences in support can matter more than the sensor generation.</p><h3>3. Logitech G305 Lightspeed - Budget wireless pick</h3><p>The G305 offers dependable wireless performance and long battery life. Its rounded shell works for relaxed claw and palm-claw use, while its heavier AA-powered design makes it less ideal for players who prioritize the lightest possible fingertip movement.</p><h2>Buying guide: what matters most</h2><h3>Shape before sensor specifications</h3><p>Most current gaming sensors are accurate enough for everyday and competitive use. A shape that reaches your side buttons comfortably and lets you reset aim without tension is more likely to improve your experience than moving from one high-DPI specification to another.</p><h3>Weight after fit</h3><p>Lower weight can help with repeated target switches and tracking, but an ultralight mouse with the wrong hump or width will still feel uncomfortable. Confirm shape first, then use weight as a tie-breaker.</p><h3>Use a return policy when changing shapes</h3><p>Mouse fit is personal. When moving from a larger or heavier shell, a reasonable return policy is more useful than trying to infer comfort from dimensions alone.</p><h2>Conclusion</h2><p>For most small-hand players, start by matching the mouse to your grip. The Viper Mini Signature Edition is the specialist premium choice, the X2V2 Mini is a strong lightweight-value route, and the G305 remains a reliable budget alternative when battery life and price lead the decision.</p>`
+  },
+  {
+    slug: 'best-gaming-setup-under-200',
+    seo: {
+      title: 'Best Gaming Peripherals for PC Under $200 in 2026',
+      description: 'Best gaming peripherals for PC under $200 in 2026: build a practical mouse, keyboard, headset, and upgrade plan without wasting budget.',
+      keywords: 'best gaming peripherals for pc under 200 2026, gaming setup under 200, budget gaming mouse keyboard headset, pc gaming peripherals',
+      focusKeyword: 'best gaming peripherals for pc under 200'
+    },
+    excerpt: 'Build the best gaming peripherals for PC under $200 by spending first on a comfortable mouse and keyboard, then adding audio only where it improves daily play.',
+    quickVerdict: {
+      summary: 'For a PC gaming setup under $200, prioritize a reliable mouse and keyboard first. Reuse a working headset or monitor, then spend the remaining budget on the part that limits your sessions most.'
+    },
+    faq: [
+      {
+        question: 'What gaming peripherals should I buy first under $200?',
+        answer: 'Start with a mouse and keyboard that fit your hand and desk. Those controls affect every game. Reuse a working headset or monitor before replacing them only for features you will not use.'
+      },
+      {
+        question: 'Can I build a PC gaming setup under $200?',
+        answer: 'Yes, if you focus on peripherals and reuse an existing PC, display, or headset where possible. A $200 budget is more effective when it improves the controls that affect every session instead of buying a low-cost bundle.'
+      },
+      {
+        question: 'Is the Logitech G305 a good budget gaming mouse?',
+        answer: 'The G305 is a dependable value choice when wireless reliability and long battery life matter more than minimum weight. Players who prefer fingertip aiming may want a lighter shape.'
+      },
+      {
+        question: 'Should I buy a gaming headset or monitor first?',
+        answer: 'Upgrade the part that creates the clearest daily limitation. A monitor comes first when motion or visibility is holding you back; a headset comes first when communication, comfort, or audio clarity is the problem.'
+      }
+    ],
+    readingTime: 9,
+    content: `<h2>Quick verdict: best gaming peripherals for PC under $200</h2><p>A useful <strong>PC gaming peripheral setup under $200</strong> starts with controls that fit: a reliable gaming mouse and keyboard. Reuse a display or headset that already works, then spend the remaining budget where you feel the limitation during real play. This avoids cheap bundles that look complete but replace comfort and reliability with RGB extras.</p><h2>A practical $200 budget split</h2><ul><li><strong>$35 to $60 for a mouse:</strong> prioritize shape, reliable wireless or cable behavior, and buttons you can reach.</li><li><strong>$50 to $80 for a keyboard:</strong> choose a layout that works for both games and everyday use.</li><li><strong>$40 to $70 for audio or a mousepad:</strong> spend only when your current headset or surface is genuinely limiting you.</li><li><strong>Keep the remainder:</strong> save it for the next upgrade rather than buying an accessory with no clear purpose.</li></ul><h2>Mouse: start with shape and reliability</h2><p>The Logitech G305 remains a sensible budget wireless option for relaxed claw and palm-claw users. Its HERO sensor and battery life are dependable, though its AA-powered weight will not suit every fingertip player. A mouse that feels comfortable during aim resets is more valuable than an inflated DPI number.</p><h2>Keyboard: choose the layout you will keep using</h2><p>A compact keyboard such as the Royal Kludge RK61 can free desk space and deliver solid value, but 60% layouts require layers for arrows and navigation. Spend more only when switch feel, wireless modes, layout, or software solves a real daily problem. A more expensive board is not automatically a better gaming purchase.</p><h2>Headset, monitor, or save the money?</h2><p>Reuse working gear when it is not limiting you. Upgrade a headset first if comfort, microphone clarity, or positional audio disrupts play. Upgrade a monitor first if refresh rate, motion clarity, or screen size is the limitation. Buyers building from scratch should treat a monitor as a separate budget, because a capable gaming display can consume most of a $200 peripheral plan.</p><h2>Upgrade order that avoids wasted spend</h2><ol><li>Fix shape and comfort problems first.</li><li>Improve reliability and latency second.</li><li>Upgrade audio or display only when it changes your actual sessions.</li><li>Buy cosmetic accessories last.</li></ol><h2>Verdict</h2><p>The best gaming peripherals for PC under $200 are not a fixed bundle. Start with a mouse and keyboard that fit, reuse equipment that still works, and keep part of the budget for the upgrade you will actually notice next.</p>`
   }
 ]
 
@@ -461,7 +505,8 @@ const statements = [
     '$.seo', json('${json(article.seo)}'),
     '$.excerpt', '${esc(article.excerpt)}',
     '$.quickVerdict', json('${json(article.quickVerdict)}'),
-    '$.faq', json('${json(article.faq)}')${article.content ? `,
+    '$.faq', json('${json(article.faq)}')${article.readingTime ? `,
+    '$.readingTime', ${article.readingTime}` : ''}${article.content ? `,
     '$.content', '${esc(article.content)}'` : ''},
     '$.updatedAt', ${now}
   ), updated_at = ${now} WHERE collection_id = '${collections.articles}' AND slug = '${esc(article.slug)}';`),
