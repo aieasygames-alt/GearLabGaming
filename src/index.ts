@@ -1013,12 +1013,19 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       }
     }
     if (data.data?.rating?.overall) {
-      schema.aggregateRating = {
-        "@type": "AggregateRating",
-        "ratingValue": data.data.rating.overall,
-        "bestRating": 10,
-        "worstRating": 0,
-        "ratingCount": 1
+      schema.review = {
+        "@type": "Review",
+        "author": {
+          "@type": "Organization",
+          "name": "GearLabGaming"
+        },
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": data.data.rating.overall,
+          "bestRating": 10,
+          "worstRating": 0
+        },
+        "reviewBody": data.data?.verdict || ''
       }
     }
     if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
