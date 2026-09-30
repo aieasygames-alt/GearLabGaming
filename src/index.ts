@@ -726,8 +726,8 @@ const COLLECTIONS = {
   products: 'col-products-ce613aa5',
   articles: 'col-articles-f7a0326f',
   categories: 'col-categories-d8563a2b',
-  authors: 'col-authors-5dc12aff'
-  // Note: price-history and comments collections are queried by name in API routes
+  authors: 'col-authors-5dc12aff',
+  priceHistory: 'col-price-history-f9569b20b0f778402303b087040bf76b'
 }
 
 const PRODUCT_SLUG_REDIRECTS: Record<string, string> = {
@@ -769,6 +769,7 @@ function getLocalizedContent(item: any, locale: Locale): any {
       cons: translations.cons || data.cons || [],
       excerpt: translations.excerpt || data.excerpt,
       content: translations.content || data.content,
+      reviewContent: translations.reviewContent || data.reviewContent,
       description: translations.description || data.description
     }
   }
@@ -1576,10 +1577,10 @@ app.get('/api/price-history/:productId', async (c) => {
   try {
     const allPriceHistory = await db.prepare(`
       SELECT * FROM content
-      WHERE collection_id = (SELECT id FROM collections WHERE name = 'price-history')
+      WHERE collection_id = ?
       ORDER BY created_at DESC
       LIMIT 100
-    `).all()
+    `).bind(COLLECTIONS.priceHistory).all()
 
     const priceHistory = (allPriceHistory.results || []).filter((item: any) => {
       try {

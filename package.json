@@ -17,6 +17,7 @@
     "upgrade:content": "tsx scripts/upgrade-indexable-content.ts",
     "add:chairs-desks": "tsx scripts/add-chairs-desks-content.ts",
     "add:core-products": "tsx scripts/add-core-products.ts",
+    "enrich:core-products": "tsx scripts/enrich-core-products.ts",
     "indexnow:submit": "tsx scripts/submit-indexnow.ts",
     "audit:meta": "tsx scripts/audit-meta-descriptions.ts",
     "update:affiliate": "tsx scripts/update-affiliate-links.ts"

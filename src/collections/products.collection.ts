@@ -72,6 +72,12 @@ export default {
             title: 'Additional Specs',
             helpText: 'JSON or text format',
           },
+          formFactor: { type: 'string', title: 'Form Factor / Panel' },
+          sensor: { type: 'string', title: 'Sensor / Switch Type' },
+          batteryLife: { type: 'string', title: 'Battery Life' },
+          refreshRate: { type: 'string', title: 'Refresh Rate' },
+          resolution: { type: 'string', title: 'Resolution' },
+          ports: { type: 'string', title: 'Ports / Platform Compatibility' },
         },
       },
       rating: {
