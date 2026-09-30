@@ -48,6 +48,18 @@ type AppBindings = { DB: any; MEDIA_BUCKET: R2Bucket }
 
 const app = new Hono<{ Bindings: AppBindings }>()
 
+// Apply a conservative browser security baseline to HTML, API, and media responses.
+// Inline scripts remain necessary until the page templates move to nonce-based scripts.
+app.use('*', async (c, next) => {
+  await next()
+  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests")
+  c.header('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), payment=(), usb=()')
+  c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
+  c.header('Strict-Transport-Security', 'max-age=31536000')
+  c.header('X-Content-Type-Options', 'nosniff')
+  c.header('X-Frame-Options', 'DENY')
+})
+
 // ============================================
 // MULTI-LANGUAGE CONFIGURATION
 // ============================================
@@ -727,7 +739,8 @@ const COLLECTIONS = {
   articles: 'col-articles-f7a0326f',
   categories: 'col-categories-d8563a2b',
   authors: 'col-authors-5dc12aff',
-  priceHistory: 'col-price-history-f9569b20b0f778402303b087040bf76b'
+  priceHistory: 'col-price-history-f9569b20b0f778402303b087040bf76b',
+  comments: 'col-comments-e81245abf7e0bf66081d56c5c90c75f2'
 }
 
 const PRODUCT_SLUG_REDIRECTS: Record<string, string> = {
@@ -1192,7 +1205,6 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <!-- Favicon with WebP support -->
   <link rel="icon" type="image/webp" href="https://gearlabgaming.com/favicon.webp" />
   <link rel="icon" type="image/png" sizes="256x256" href="https://gearlabgaming.com/favicon-256.png" />
-  <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="apple-touch-icon" sizes="256x256" href="https://gearlabgaming.com/favicon-256.png" />
 
   <!-- Open Graph / Facebook -->
@@ -1218,7 +1230,7 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <script type="application/ld+json">${escapeJsonForHtml(serializedSchemas)}</script>
 
   <!-- Styles -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -1292,7 +1304,6 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
       else img.addEventListener('load', () => img.classList.add('loaded'));
     });
   </script>
-  <script>document.addEventListener('DOMContentLoaded', () => window.lucide?.createIcons());</script>
   </body>
 </html>`
 }
@@ -1627,10 +1638,10 @@ app.get('/api/comments/:contentType/:contentId', async (c) => {
   try {
     const allComments = await db.prepare(`
       SELECT * FROM content
-      WHERE collection_id = (SELECT id FROM collections WHERE name = 'comments')
+      WHERE collection_id = ?
       AND status = 'published'
       ORDER BY created_at DESC
-    `).all()
+    `).bind(COLLECTIONS.comments).all()
 
     const comments = (allComments.results || []).filter((item: any) => {
       try {
@@ -1664,42 +1675,69 @@ app.post('/api/comments', async (c) => {
   const db = c.env.DB
   try {
     const body = await c.req.json()
-    const { product, article, author, content, rating } = body
-
-    if (!content || !author?.name) {
-      return c.json({ success: false, error: 'Missing required fields' }, 400)
+    if (!body || typeof body !== 'object') {
+      return c.json({ success: false, error: 'Invalid comment payload' }, 400)
     }
 
-    const collectionResult = await db.prepare(`
-      SELECT id FROM collections WHERE name = 'comments'
-    `).first()
+    const { product, article, author, content, rating } = body
+    const productId = typeof product === 'string' ? product.trim() : ''
+    const articleId = typeof article === 'string' ? article.trim() : ''
+    if (Boolean(productId) === Boolean(articleId)) {
+      return c.json({ success: false, error: 'Select exactly one published product or article' }, 400)
+    }
 
-    if (!collectionResult) {
-      return c.json({ success: false, error: 'Comments collection not found. Please sync collections first.' }, 500)
+    const authorName = typeof author?.name === 'string' ? author.name.trim() : ''
+    const authorEmail = typeof author?.email === 'string' ? author.email.trim().toLowerCase() : ''
+    const commentContent = typeof content === 'string' ? content.trim() : ''
+    const normalizedRating = Number(rating)
+
+    if (!authorName || authorName.length > 80 || !commentContent || commentContent.length > 2000) {
+      return c.json({ success: false, error: 'Name or comment content is invalid' }, 400)
+    }
+    if (authorEmail && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(authorEmail) || authorEmail.length > 254)) {
+      return c.json({ success: false, error: 'Email address is invalid' }, 400)
+    }
+    if (!Number.isInteger(normalizedRating) || normalizedRating < 1 || normalizedRating > 5) {
+      return c.json({ success: false, error: 'Rating must be an integer from 1 to 5' }, 400)
+    }
+
+    const targetId = productId || articleId
+    const targetCollection = productId ? COLLECTIONS.products : COLLECTIONS.articles
+    const target = await db.prepare(`
+      SELECT id FROM content
+      WHERE id = ? AND collection_id = ? AND status = 'published'
+    `).bind(targetId, targetCollection).first()
+    if (!target) {
+      return c.json({ success: false, error: 'Comment target was not found' }, 404)
     }
 
     const commentId = `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const now = Math.floor(Date.now() / 1000)
-    const commentData = { product, article, author, content, rating }
+    const commentData = {
+      ...(productId ? { product: productId } : { article: articleId }),
+      author: { name: authorName, ...(authorEmail ? { email: authorEmail } : {}) },
+      content: commentContent,
+      rating: normalizedRating
+    }
 
     await db.prepare(`
       INSERT INTO content (id, collection_id, slug, title, data, status, author_id, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       commentId,
-      collectionResult.id,
+      COLLECTIONS.comments,
       commentId,
-      `Comment by ${author.name}`,
+      `Comment by ${authorName}`,
       JSON.stringify(commentData),
-      'published',
-      'system',
+      'pending',
+      null,
       now,
       now
     ).run()
 
-    return c.json({ success: true, data: { id: commentId } })
+    return c.json({ success: true, data: { id: commentId }, message: 'Comment submitted for moderation' }, 201)
   } catch (error) {
-    return c.json({ success: false, error: 'Failed to create comment: ' + (error as Error).message }, 500)
+    return c.json({ success: false, error: 'Failed to create comment' }, 500)
   }
 })
 
@@ -2433,7 +2471,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
               </div>
             </div>
 
-            ${faq.length > 0 ? `<div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-4">Frequently asked questions</h2><div class="space-y-5">${faq.map((item: any) => `<div><h3 class="font-semibold mb-1">${item.question || ''}</h3><p class="text-gray-400">${item.answer || ''}</p></div>`).join('')}</div></div>` : ''}
+            ${faq.length > 0 ? `<div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-4">Frequently asked questions</h2><div class="space-y-5">${faq.map((item: any) => `<div><h3 class="font-semibold mb-1">${escapeHtml(item.question)}</h3><p class="text-gray-400">${escapeHtml(item.answer)}</p></div>`).join('')}</div></div>` : ''}
 
             <div class="border-t border-gray-700 pt-6 mt-2 text-sm text-gray-500 dark:text-gray-400">
               <p>We may earn a commission from qualifying purchases. This does not affect our ratings or editorial recommendations.</p>
@@ -2473,6 +2511,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
           priceLowest: '${t(locale, 'priceHistory.lowest')}',
           priceAverage: '${t(locale, 'priceHistory.average')}',
           priceHighest: '${t(locale, 'priceHistory.highest')}',
+          priceCurrent: '${t(locale, 'priceHistory.current')}',
+          priceLastUpdate: '${t(locale, 'priceHistory.lastUpdate')}',
           commentSuccess: '${t(locale, 'comments.success')}'
         };
 
@@ -2502,17 +2542,58 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             .then(r => r.json())
             .then(data => {
               if (data.success && data.data.length > 0) {
-                const prices = data.data.map(d => d.price).reverse();
+                const entries = data.data
+                  .map(d => ({ ...d, price: Number(d.price) }))
+                  .filter(d => Number.isFinite(d.price));
+                if (!entries.length) return;
+
+                const chart = document.getElementById('price-history-chart');
+                chart.replaceChildren();
+                const formatPrice = (entry) => entry.currency === 'USD'
+                  ? '$' + entry.price.toFixed(2)
+                  : entry.currency + ' ' + entry.price.toFixed(2);
+
+                if (entries.length === 1) {
+                  const entry = entries[0];
+                  const wrapper = document.createElement('div');
+                  wrapper.className = 'text-center';
+                  const price = document.createElement('div');
+                  price.className = 'text-2xl font-bold text-green-400';
+                  price.textContent = formatPrice(entry);
+                  const label = document.createElement('div');
+                  label.className = 'text-sm text-gray-400';
+                  label.textContent = TRANSLATIONS.priceCurrent;
+                  const updated = document.createElement('div');
+                  updated.className = 'mt-2 text-xs text-gray-500';
+                  updated.textContent = TRANSLATIONS.priceLastUpdate + ': ' + new Date(entry.createdAt * 1000).toLocaleDateString();
+                  wrapper.append(price, label, updated);
+                  chart.append(wrapper);
+                  return;
+                }
+
+                const prices = entries.map(d => d.price).reverse();
                 const min = Math.min(...prices);
                 const max = Math.max(...prices);
                 const avg = (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2);
-                document.getElementById('price-history-chart').innerHTML = \`
-                  <div class="grid grid-cols-3 gap-4 text-center">
-                    <div><div class="text-2xl font-bold text-green-400">\$\${min}</div><div class="text-sm text-gray-400">\${TRANSLATIONS.priceLowest}</div></div>
-                    <div><div class="text-2xl font-bold">\$\${avg}</div><div class="text-sm text-gray-400">\${TRANSLATIONS.priceAverage}</div></div>
-                    <div><div class="text-2xl font-bold text-red-400">\$\${max}</div><div class="text-sm text-gray-400">\${TRANSLATIONS.priceHighest}</div></div>
-                  </div>
-                \`;
+                const metrics = [
+                  { value: '$' + min.toFixed(2), label: TRANSLATIONS.priceLowest, tone: 'text-green-400' },
+                  { value: '$' + avg, label: TRANSLATIONS.priceAverage, tone: '' },
+                  { value: '$' + max.toFixed(2), label: TRANSLATIONS.priceHighest, tone: 'text-red-400' }
+                ];
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-3 gap-4 text-center';
+                metrics.forEach(metric => {
+                  const metricNode = document.createElement('div');
+                  const value = document.createElement('div');
+                  value.className = 'text-2xl font-bold ' + metric.tone;
+                  value.textContent = metric.value;
+                  const label = document.createElement('div');
+                  label.className = 'text-sm text-gray-400';
+                  label.textContent = metric.label;
+                  metricNode.append(value, label);
+                  grid.append(metricNode);
+                });
+                chart.append(grid);
               }
             });
 
@@ -2521,23 +2602,34 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             .then(r => r.json())
             .then(data => {
               if (data.success && data.data.length > 0) {
-                document.getElementById('comments-list').innerHTML = data.data.map(c => {
-                  let authorName;
-                  try {
-                    authorName = JSON.parse(c.author).name;
-                  } catch (e) {
-                    authorName = 'Anonymous';
+                const commentsList = document.getElementById('comments-list');
+                commentsList.replaceChildren();
+                data.data.forEach(comment => {
+                  let author = comment.author;
+                  if (typeof author === 'string') {
+                    try { author = JSON.parse(author); } catch (e) { author = null; }
                   }
-                  return \`
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4">
-                      <div class="flex items-center gap-2 mb-2">
-                        <span class="font-bold">\${authorName}</span>
-                        <span class="text-yellow-400">\${'⭐'.repeat(c.rating || 0)}</span>
-                      </div>
-                      <p class="text-gray-300">\${c.content}</p>
-                    </div>
-                  \`;
-                }).join('');
+                  const authorName = typeof author?.name === 'string' && author.name.trim()
+                    ? author.name.trim()
+                    : 'Anonymous';
+                  const rating = Math.max(0, Math.min(5, Number.parseInt(comment.rating, 10) || 0));
+                  const card = document.createElement('div');
+                  card.className = 'bg-white dark:bg-gray-800 rounded-lg p-4';
+                  const meta = document.createElement('div');
+                  meta.className = 'flex items-center gap-2 mb-2';
+                  const name = document.createElement('span');
+                  name.className = 'font-bold';
+                  name.textContent = authorName;
+                  const stars = document.createElement('span');
+                  stars.className = 'text-yellow-400';
+                  stars.textContent = '⭐'.repeat(rating);
+                  const text = document.createElement('p');
+                  text.className = 'text-gray-300';
+                  text.textContent = typeof comment.content === 'string' ? comment.content : '';
+                  meta.append(name, stars);
+                  card.append(meta, text);
+                  commentsList.append(card);
+                });
               }
             });
 
