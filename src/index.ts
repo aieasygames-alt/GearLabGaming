@@ -991,6 +991,13 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
         "@type": "WebPage",
         "@id": canonicalUrl
       },
+      "datePublished": toIsoDate(data.created_at),
+      "dateModified": toIsoDate(data.updated_at || data.created_at),
+      "publisher": {
+        "@type": "Organization",
+        "name": "GearLabGaming",
+        "url": BASE_URL
+      },
       "brand": {
         "@type": "Brand",
         "name": data.data?.brand || ''
