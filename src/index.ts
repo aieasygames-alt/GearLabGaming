@@ -2254,13 +2254,21 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
   const reviewContent = localized.data?.reviewContent || p.data?.reviewContent || ''
-  const [allProducts, allCategories] = await Promise.all([
+  const [allProducts, allArticles, allCategories] = await Promise.all([
     getContent(db, COLLECTIONS.products, { limit: 100 }),
+    getContent(db, COLLECTIONS.articles, { limit: 100 }),
     getContent(db, COLLECTIONS.categories, { limit: 100 })
   ])
   const relatedProducts = allProducts
     .filter((item: any) => isIndexableProduct(item) && item.slug !== p.slug && !PRODUCT_SLUG_REDIRECTS[item.slug] && areSameCategory(item.data?.category, p.data?.category, allCategories))
     .sort((a: any, b: any) => (b.data?.rating?.overall || 0) - (a.data?.rating?.overall || 0))
+    .slice(0, 3)
+  const editorialGuides = allArticles
+    .filter((article: any) => {
+      const references = getRelatedProductIdentifiers(article.data?.featuredProducts)
+      return isIndexableArticle(article) && !ARTICLE_SLUG_REDIRECTS[article.slug] && (references.includes(p.id) || references.includes(p.slug))
+    })
+    .sort((left: any, right: any) => Number(right.updated_at || right.created_at || 0) - Number(left.updated_at || left.created_at || 0))
     .slice(0, 3)
   const productCategorySlug = getCategorySlug(p.data?.category, allCategories)
   const productCategory = allCategories.find((category: any) =>
@@ -2376,6 +2384,8 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             </div>
 
             ${relatedProducts.length > 0 ? `<div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><div class="flex items-center justify-between gap-4 mb-4"><h2 class="text-xl font-bold">Compare with similar products</h2><a href="/${locale}/compare?products=${[p.slug, ...relatedProducts.slice(0, 2).map((item: any) => item.slug)].join(',')}" class="text-purple-400 text-sm">Open comparison</a></div><div class="grid sm:grid-cols-3 gap-3">${relatedProducts.map((item: any) => `<a href="/${locale}/product/${item.slug}" class="p-3 rounded-lg bg-white dark:bg-gray-800 hover:ring-1 hover:ring-purple-500"><div class="font-medium text-sm">${item.title}</div><div class="text-purple-400 text-sm mt-1">$${item.data?.price || '-'} · ${item.data?.rating?.overall || '-'}/10</div></a>`).join('')}</div></div>` : ''}
+
+            ${editorialGuides.length > 0 ? `<section class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-4">Related guides and comparisons</h2><div class="grid sm:grid-cols-3 gap-3">${editorialGuides.map((article: any) => { const guide = getLocalizedContent(article, locale); return `<a href="/${locale}/article/${article.slug}" class="p-3 rounded-lg bg-white dark:bg-gray-800 hover:ring-1 hover:ring-purple-500"><span class="text-xs uppercase text-purple-400">${article.data?.type || 'article'}</span><div class="font-medium text-sm mt-1">${guide.title}</div><p class="text-gray-400 text-sm mt-2 line-clamp-2">${guide.data?.excerpt || ''}</p></a>` }).join('')}</div></section>` : ''}
 
             <!-- Price History -->
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
