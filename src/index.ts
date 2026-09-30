@@ -6,6 +6,7 @@
  */
 
 import { Hono } from 'hono'
+import { parseHTML } from 'linkedom'
 import { createSonicJSApp, registerCollections } from '@sonicjs-cms/core'
 import type { SonicJSConfig } from '@sonicjs-cms/core'
 
@@ -44,15 +45,37 @@ const config: SonicJSConfig = {
 const coreApp = createSonicJSApp(config)
 
 // Create main app with custom routes
-type AppBindings = { DB: any; MEDIA_BUCKET: R2Bucket }
+type AppBindings = { DB: any; MEDIA_BUCKET: R2Bucket; ENVIRONMENT?: string }
 
 const app = new Hono<{ Bindings: AppBindings }>()
+
+const COMMENT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+const COMMENT_RATE_LIMIT_MAX_REQUESTS = 5
+const COMMENT_MAX_BODY_BYTES = 8_192
+const commentRateLimits = new Map<string, { count: number; resetAt: number }>()
+
+function getClientKey(request: Request): string {
+  const forwardedFor = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || ''
+  return forwardedFor.split(',')[0].trim() || 'unknown'
+}
+
+function isCommentRateLimited(request: Request): boolean {
+  const now = Date.now()
+  const clientKey = getClientKey(request)
+  const current = commentRateLimits.get(clientKey)
+  if (!current || current.resetAt <= now) {
+    commentRateLimits.set(clientKey, { count: 1, resetAt: now + COMMENT_RATE_LIMIT_WINDOW_MS })
+    return false
+  }
+  current.count += 1
+  return current.count > COMMENT_RATE_LIMIT_MAX_REQUESTS
+}
 
 // Apply a conservative browser security baseline to HTML, API, and media responses.
 // Inline scripts remain necessary until the page templates move to nonce-based scripts.
 app.use('*', async (c, next) => {
   await next()
-  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests")
+  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests")
   c.header('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), payment=(), usb=()')
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
   c.header('Strict-Transport-Security', 'max-age=31536000')
@@ -898,6 +921,67 @@ function escapeJsonForHtml(value: string): string {
   return value.replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')
 }
 
+const ALLOWED_RICH_TEXT_TAGS = new Set([
+  'a', 'blockquote', 'br', 'code', 'del', 'em', 'figcaption', 'figure', 'h2', 'h3', 'h4',
+  'hr', 'img', 'li', 'ol', 'p', 'pre', 's', 'strong', 'table', 'tbody', 'td', 'th', 'thead',
+  'tr', 'u', 'ul'
+])
+
+const ALLOWED_RICH_TEXT_ATTRIBUTES: Record<string, Set<string>> = {
+  a: new Set(['href', 'title']),
+  img: new Set(['alt', 'height', 'src', 'title', 'width']),
+  ol: new Set(['start']),
+  td: new Set(['colspan', 'rowspan']),
+  th: new Set(['colspan', 'rowspan'])
+}
+
+function isSafeRichTextUrl(value: string, tagName: string): boolean {
+  if (!value) return false
+  if (tagName === 'img') return value.startsWith('/') || /^https:\/\//i.test(value)
+  return value.startsWith('/') || value.startsWith('#') || /^https:\/\//i.test(value) || /^mailto:/i.test(value)
+}
+
+function sanitizeRichText(value: unknown): string {
+  const { document } = parseHTML(`<body>${String(value ?? '')}</body>`)
+  const body = document.body
+  if (!body) return ''
+
+  const elements = Array.from(body.querySelectorAll('*')) as Array<{
+    tagName: string
+    attributes: ArrayLike<{ name: string; value: string }>
+    childNodes: ArrayLike<unknown>
+    getAttribute: (name: string) => string | null
+    removeAttribute: (name: string) => void
+    replaceWith: (...nodes: unknown[]) => void
+    setAttribute: (name: string, value: string) => void
+  }>
+  for (const element of elements) {
+    const tagName = element.tagName.toLowerCase()
+    if (!ALLOWED_RICH_TEXT_TAGS.has(tagName)) {
+      element.replaceWith(...Array.from(element.childNodes))
+      continue
+    }
+
+    const allowedAttributes = ALLOWED_RICH_TEXT_ATTRIBUTES[tagName] || new Set<string>()
+    for (const attribute of Array.from(element.attributes)) {
+      const attributeName = attribute.name.toLowerCase()
+      if (!allowedAttributes.has(attributeName)) {
+        element.removeAttribute(attribute.name)
+        continue
+      }
+      if ((attributeName === 'href' || attributeName === 'src') && !isSafeRichTextUrl(attribute.value.trim(), tagName)) {
+        element.removeAttribute(attribute.name)
+      }
+    }
+
+    if (tagName === 'a' && element.getAttribute('href')?.startsWith('http')) {
+      element.setAttribute('rel', 'noopener noreferrer')
+    }
+  }
+
+  return body.innerHTML
+}
+
 function stripHtml(value: unknown): string {
   return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -1230,23 +1314,151 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <script type="application/ld+json">${escapeJsonForHtml(serializedSchemas)}</script>
 
   <!-- Styles -->
-  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {}
-      }
-    }
-  </script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
+    :root { color-scheme: dark; }
     body { font-family: 'Inter', sans-serif; }
+    .hidden { display: none; }
+    .flex { display: flex; }
+    .grid { display: grid; }
+    .block { display: block; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .sticky { position: sticky; }
+    .fixed { position: fixed; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .flex-wrap { flex-wrap: wrap; }
+    .flex-col { flex-direction: column; }
+    .flex-1 { flex: 1 1 0%; }
+    .min-w-0 { min-width: 0; }
+    .min-h-screen { min-height: 100vh; }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .max-w-4xl { max-width: 56rem; }
+    .max-w-6xl { max-width: 72rem; }
+    .max-w-7xl { max-width: 80rem; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    .overflow-hidden { overflow: hidden; }
+    .overflow-x-auto { overflow-x: auto; }
+    .object-cover { object-fit: cover; }
+    .object-contain { object-fit: contain; }
+    .text-center { text-align: center; }
+    .text-left { text-align: left; }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .rounded { border-radius: .25rem; }
+    .rounded-lg { border-radius: .5rem; }
+    .rounded-xl { border-radius: .75rem; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-full { border-radius: 9999px; }
+    .border { border-width: 1px; border-style: solid; }
+    .border-t { border-top-width: 1px; border-top-style: solid; }
+    .border-b { border-bottom-width: 1px; border-bottom-style: solid; }
+    .border-gray-700 { border-color: #374151; }
+    .border-gray-600 { border-color: #4b5563; }
+    .border-gray-300 { border-color: #d1d5db; }
+    .bg-white { background-color: #fff; }
+    .bg-gray-100 { background-color: #f3f4f6; }
+    .bg-gray-700 { background-color: #374151; }
+    .bg-gray-800 { background-color: #1f2937; }
+    .bg-gray-900 { background-color: #111827; }
+    .bg-purple-600 { background-color: #9333ea; }
+    .bg-orange-600 { background-color: #ea580c; }
+    .text-white { color: #fff; }
+    .text-gray-300 { color: #d1d5db; }
+    .text-gray-400 { color: #9ca3af; }
+    .text-gray-500 { color: #6b7280; }
+    .text-purple-400 { color: #c084fc; }
+    .text-green-400 { color: #4ade80; }
+    .text-red-400 { color: #f87171; }
+    .text-yellow-400 { color: #facc15; }
+    .text-sm { font-size: .875rem; }
+    .text-xs { font-size: .75rem; }
+    .text-xl { font-size: 1.25rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .text-3xl { font-size: 1.875rem; }
+    .text-4xl { font-size: 2.25rem; }
+    .leading-tight { line-height: 1.25; }
+    .leading-relaxed { line-height: 1.625; }
+    .p-2 { padding: .5rem; }
+    .p-3 { padding: .75rem; }
+    .p-4 { padding: 1rem; }
+    .p-6 { padding: 1.5rem; }
+    .p-8 { padding: 2rem; }
+    .px-3 { padding-left: .75rem; padding-right: .75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+    .py-1 { padding-top: .25rem; padding-bottom: .25rem; }
+    .py-2 { padding-top: .5rem; padding-bottom: .5rem; }
+    .py-3 { padding-top: .75rem; padding-bottom: .75rem; }
+    .py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+    .py-16 { padding-top: 4rem; padding-bottom: 4rem; }
+    .py-20 { padding-top: 5rem; padding-bottom: 5rem; }
+    .mb-1 { margin-bottom: .25rem; }
+    .mb-2 { margin-bottom: .5rem; }
+    .mb-3 { margin-bottom: .75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+    .mb-8 { margin-bottom: 2rem; }
+    .mb-10 { margin-bottom: 2.5rem; }
+    .mt-1 { margin-top: .25rem; }
+    .mt-2 { margin-top: .5rem; }
+    .mt-6 { margin-top: 1.5rem; }
+    .mt-8 { margin-top: 2rem; }
+    .mt-10 { margin-top: 2.5rem; }
+    .mt-16 { margin-top: 4rem; }
+    .gap-2 { gap: .5rem; }
+    .gap-3 { gap: .75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    .space-y-2 > :not([hidden]) ~ :not([hidden]) { margin-top: .5rem; }
+    .space-y-3 > :not([hidden]) ~ :not([hidden]) { margin-top: .75rem; }
+    .space-y-4 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+    .space-y-5 > :not([hidden]) ~ :not([hidden]) { margin-top: 1.25rem; }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .aspect-video { aspect-ratio: 16 / 9; }
+    .h-48 { height: 12rem; }
+    .top-8 { top: 2rem; }
+    .prose p { margin: 0 0 1rem; line-height: 1.65; }
+    .prose h2 { font-size: 1.5rem; margin: 2rem 0 1rem; }
+    .prose h3 { font-size: 1.25rem; margin: 1.5rem 0 .75rem; }
+    .prose ul, .prose ol { margin: 1rem 0; padding-left: 1.5rem; }
+    .prose a { color: #c084fc; }
+    .prose img { max-width: 100%; height: auto; border-radius: .75rem; }
+    .prose table { width: 100%; border-collapse: collapse; }
+    .prose th, .prose td { border: 1px solid #374151; padding: .75rem; text-align: left; }
+    .dark .dark\\:bg-gray-800 { background-color: #1f2937; }
+    .dark .dark\\:bg-gray-900 { background-color: #111827; }
+    .dark .dark\\:text-gray-300 { color: #d1d5db; }
+    .dark .dark\\:text-gray-400 { color: #9ca3af; }
+    .dark .dark\\:border-gray-600 { border-color: #4b5563; }
     /* Theme transition */
     * { transition: background-color 0.2s, border-color 0.2s, color 0.2s; }
     /* Lazy load images */
     img[loading="lazy"] { opacity: 0; transition: opacity 0.3s; }
     img[loading="lazy"].loaded { opacity: 1; }
+    @media (min-width: 640px) {
+      .sm\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sm\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .sm\\:inline { display: inline; }
+    }
+    @media (min-width: 768px) {
+      .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .md\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .md\\:p-10 { padding: 2.5rem; }
+      .md\\:text-5xl { font-size: 3rem; }
+    }
+    @media (min-width: 1024px) {
+      .lg\\:grid { display: grid; }
+      .lg\\:block { display: block; }
+      .lg\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .lg\\:grid-cols-\[1fr_280px\] { grid-template-columns: 1fr 280px; }
+      .lg\\:gap-12 { gap: 3rem; }
+    }
   </style>
 
   <!-- Theme Script (runs before render to prevent flash) -->
@@ -1344,7 +1556,7 @@ app.use('*', async (c, next) => {
 // ============================================
 
 app.get('/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString(), version: '1.0.0' })
+  return c.json({ status: 'ok' })
 })
 
 // IndexNow verifies that this public file contains the key before accepting
@@ -1357,9 +1569,7 @@ app.get(INDEXNOW_KEY_PATH, (c) => c.text(INDEXNOW_KEY, 200, {
 app.get('/api/info', (c) => {
   return c.json({
     name: 'GearLabGaming API',
-    description: 'Gaming Gear Reviews & Guides',
-    version: '1.0.0',
-    supportedLocales: SUPPORTED_LOCALES
+    description: 'Gaming Gear Reviews & Guides'
   })
 })
 
@@ -1674,6 +1884,14 @@ app.get('/api/comments/:contentType/:contentId', async (c) => {
 app.post('/api/comments', async (c) => {
   const db = c.env.DB
   try {
+    const contentLength = Number(c.req.header('Content-Length') || 0)
+    if (contentLength > COMMENT_MAX_BODY_BYTES) {
+      return c.json({ success: false, error: 'Comment payload is too large' }, 413)
+    }
+    if (isCommentRateLimited(c.req.raw)) {
+      c.header('Retry-After', String(COMMENT_RATE_LIMIT_WINDOW_MS / 1000))
+      return c.json({ success: false, error: 'Too many comment submissions. Please try again later.' }, 429)
+    }
     const body = await c.req.json()
     if (!body || typeof body !== 'object') {
       return c.json({ success: false, error: 'Invalid comment payload' }, 400)
@@ -2163,16 +2381,16 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
     const image = getProductImage(p)
     return `
     <article class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition relative">
-      <label class="absolute top-3 right-3 z-10 bg-gray-900/80 px-2 py-1 rounded text-xs text-white cursor-pointer"><input type="checkbox" class="compare-choice mr-1" value="${p.slug}"> Compare</label>
-      <a href="/${locale}/product/${p.slug}" class="block">
-      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${image}" alt="${localized.title}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
+      <label class="absolute top-3 right-3 z-10 bg-gray-900/80 px-2 py-1 rounded text-xs text-white cursor-pointer"><input type="checkbox" class="compare-choice mr-1" value="${escapeHtml(p.slug)}"> Compare</label>
+      <a href="/${locale}/product/${encodeURIComponent(p.slug)}" class="block">
+      <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(localized.title)}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
       <div class="p-4">
         <div class="flex justify-between items-center mb-2">
-          <span class="text-sm text-purple-400">${p.data?.brand || ''}</span>
+          <span class="text-sm text-purple-400">${escapeHtml(p.data?.brand)}</span>
           <span class="text-sm bg-green-500/20 text-green-400 px-2 py-0.5 rounded">⭐ ${p.data?.rating?.overall || '-'}/10</span>
         </div>
-        <h3 class="font-bold mb-2">${localized.title}</h3>
-        <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">${(localized.data?.verdict || '').substring(0, 80)}...</p>
+        <h3 class="font-bold mb-2">${escapeHtml(localized.title)}</h3>
+        <p class="text-gray-500 dark:text-gray-400 text-sm mb-3">${escapeHtml((localized.data?.verdict || '').substring(0, 80))}...</p>
         <div class="flex justify-between items-center">
           <span class="text-xl font-bold text-purple-400">$${p.data?.price || '-'}</span>
           <span class="text-purple-400">${t(locale, 'products.readReview')} →</span>
@@ -2184,11 +2402,11 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
 
   // Build filter options HTML
   const categoryOptions = categories.map((cat: any) =>
-    `<option value="${cat.data?.slug || cat.slug}" ${categoryFilter === (cat.data?.slug || cat.slug) ? 'selected' : ''}>${cat.data?.name || cat.title}</option>`
+    `<option value="${escapeHtml(cat.data?.slug || cat.slug)}" ${categoryFilter === (cat.data?.slug || cat.slug) ? 'selected' : ''}>${escapeHtml(cat.data?.name || cat.title)}</option>`
   ).join('')
 
   const brandOptions = brands.map((brand: string) =>
-    `<option value="${brand}" ${brandFilter === brand ? 'selected' : ''}>${brand}</option>`
+    `<option value="${escapeHtml(brand)}" ${brandFilter === brand ? 'selected' : ''}>${escapeHtml(brand)}</option>`
   ).join('')
 
   return c.html(wrapHTML(t(locale, 'products.title'), `
@@ -2323,13 +2541,13 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const localized = getLocalizedContent(p, locale)
   const productImages = Array.isArray(p.data?.images) ? p.data.images : []
   const productImage = productImages[0]
-  const prosHTML = localized.data?.pros?.map((pro: string) => `<li class="flex items-center gap-2"><span class="text-green-400">✓</span> ${pro}</li>`).join('') || ''
-  const consHTML = localized.data?.cons?.map((con: string) => `<li class="flex items-center gap-2"><span class="text-red-400">✗</span> ${con}</li>`).join('') || ''
+  const prosHTML = localized.data?.pros?.map((pro: string) => `<li class="flex items-center gap-2"><span class="text-green-400">✓</span> ${escapeHtml(pro)}</li>`).join('') || ''
+  const consHTML = localized.data?.cons?.map((con: string) => `<li class="flex items-center gap-2"><span class="text-red-400">✗</span> ${escapeHtml(con)}</li>`).join('') || ''
   const bestFor = Array.isArray(localized.data?.bestFor) ? localized.data.bestFor : []
   const additionalSpecs = localized.data?.specs?.additionalSpecs
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
-  const reviewContent = localized.data?.reviewContent || p.data?.reviewContent || ''
+  const reviewContent = sanitizeRichText(localized.data?.reviewContent || p.data?.reviewContent || '')
   const [allProducts, allArticles, allCategories] = await Promise.all([
     getContent(db, COLLECTIONS.products, { limit: 100 }),
     getContent(db, COLLECTIONS.articles, { limit: 100 }),
@@ -2360,25 +2578,25 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
         <div class="flex flex-wrap gap-x-4 gap-y-2 mb-4 text-sm">
           <a href="/${locale}" class="text-purple-400">${t(locale, 'nav.home')}</a>
           <a href="/${locale}/products" class="text-purple-400">${t(locale, 'detail.backProducts')}</a>
-          ${productCategorySlug ? `<a href="/${locale}/category/${productCategorySlug}" class="text-purple-400">Browse ${productCategoryName}</a>` : ''}
+          ${productCategorySlug ? `<a href="/${locale}/category/${encodeURIComponent(productCategorySlug)}" class="text-purple-400">Browse ${escapeHtml(productCategoryName)}</a>` : ''}
         </div>
 
         <div class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden">
           <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-            ${productImage ? `<img src="${productImage}" alt="${localized.title}" class="w-full h-full object-contain" loading="eager">` : `<span class="text-8xl">${getCategoryIcon(p.data?.category)}</span>`}
+            ${productImage ? `<img src="${escapeHtml(productImage)}" alt="${escapeHtml(localized.title)}" class="w-full h-full object-contain" loading="eager">` : `<span class="text-8xl">${getCategoryIcon(p.data?.category)}</span>`}
           </div>
           <div class="p-8">
             <div class="flex items-center gap-4 mb-4">
-              <span class="text-purple-400">${p.data?.brand}</span>
+              <span class="text-purple-400">${escapeHtml(p.data?.brand)}</span>
               <span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full font-bold">⭐ ${p.data?.rating?.overall}/10</span>
               ${p.data?.featured ? `<span class="bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">${t(locale, 'detail.featured')}</span>` : ''}
             </div>
 
-            <h1 class="text-3xl font-bold mb-4">${localized.title}</h1>
+            <h1 class="text-3xl font-bold mb-4">${escapeHtml(localized.title)}</h1>
 
             <div class="text-4xl font-bold text-purple-400 mb-6">$${p.data?.price}</div>
 
-            <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">${localized.data?.verdict || ''}</p>
+            <p class="text-xl text-gray-600 dark:text-gray-300 mb-8">${escapeHtml(localized.data?.verdict)}</p>
 
             <div class="grid sm:grid-cols-3 gap-3 mb-8 text-sm">
               <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4"><div class="text-purple-400 font-semibold mb-1">Tested for</div><div class="text-gray-500 dark:text-gray-400">Gaming performance, comfort, build, and value</div></div>
@@ -2390,15 +2608,15 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
             <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-6 mb-8">
               <h2 class="text-xl font-bold mb-4">${t(locale, 'detail.specs')}</h2>
               <div class="grid grid-cols-2 gap-4 text-sm">
-                ${p.data?.specs?.weight ? `<div><span class="text-gray-400">Weight:</span> <span class="font-medium">${p.data.specs.weight}</span></div>` : ''}
-                ${p.data?.specs?.dimensions ? `<div><span class="text-gray-400">Dimensions:</span> <span class="font-medium">${p.data.specs.dimensions}</span></div>` : ''}
-                ${p.data?.specs?.connectivity ? `<div><span class="text-gray-400">Connectivity:</span> <span class="font-medium">${p.data.specs.connectivity}</span></div>` : ''}
-                ${p.data?.specs?.sensor ? `<div><span class="text-gray-400">Sensor:</span> <span class="font-medium">${p.data.specs.sensor}</span></div>` : ''}
-                ${additionalSpecs ? `<div class="col-span-2"><span class="text-gray-400">Key details:</span> <span class="font-medium">${additionalSpecs}</span></div>` : ''}
+                ${p.data?.specs?.weight ? `<div><span class="text-gray-400">Weight:</span> <span class="font-medium">${escapeHtml(p.data.specs.weight)}</span></div>` : ''}
+                ${p.data?.specs?.dimensions ? `<div><span class="text-gray-400">Dimensions:</span> <span class="font-medium">${escapeHtml(p.data.specs.dimensions)}</span></div>` : ''}
+                ${p.data?.specs?.connectivity ? `<div><span class="text-gray-400">Connectivity:</span> <span class="font-medium">${escapeHtml(p.data.specs.connectivity)}</span></div>` : ''}
+                ${p.data?.specs?.sensor ? `<div><span class="text-gray-400">Sensor:</span> <span class="font-medium">${escapeHtml(p.data.specs.sensor)}</span></div>` : ''}
+                ${additionalSpecs ? `<div class="col-span-2"><span class="text-gray-400">Key details:</span> <span class="font-medium">${escapeHtml(additionalSpecs)}</span></div>` : ''}
               </div>
             </div>
 
-            ${bestFor.length > 0 ? `<div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-3">Who it is for</h2><div class="flex flex-wrap gap-2">${bestFor.map((item: string) => `<span class="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">${item}</span>`).join('')}</div></div>` : ''}
+            ${bestFor.length > 0 ? `<div class="bg-purple-500/10 border border-purple-500/30 rounded-lg p-6 mb-8"><h2 class="text-xl font-bold mb-3">Who it is for</h2><div class="flex flex-wrap gap-2">${bestFor.map((item: string) => `<span class="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">${escapeHtml(item)}</span>`).join('')}</div></div>` : ''}
 
             ${reviewContent ? `<div class="bg-white dark:bg-gray-800 rounded-xl p-6 md:p-8 shadow-lg border border-gray-700/60 mb-8"><div class="prose prose-lg dark:prose-invert max-w-none prose-headings:text-white prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-700 prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-4 prose-strong:text-white prose-ul:my-4 prose-ol:my-4 prose-li:text-gray-300 prose-li:my-1">${reviewContent}</div></div>` : ''}
 
@@ -2795,7 +3013,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     .slice(0, 3)
 
   // Generate TOC from content headings
-  const content = localized.data?.content || ''
+  const content = sanitizeRichText(localized.data?.content || '')
   const tocItems: { level: number; text: string; id: string }[] = []
   const contentWithIds = content.replace(/<h([2-4])>(.*?)<\/h\1>/g, (match: string, level: string, text: string) => {
     const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -2830,14 +3048,14 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
           <a href="/${locale}" class="text-gray-400 hover:text-purple-400">${t(locale, 'nav.home')}</a>
           <span class="mx-2 text-gray-600">/</span>
           <a href="/${locale}/articles" class="text-gray-400 hover:text-purple-400">${t(locale, 'nav.articles')}</a>
-          ${articleCategorySlug ? `<span class="mx-2 text-gray-600">/</span><a href="/${locale}/category/${articleCategorySlug}" class="text-gray-400 hover:text-purple-400">${articleCategoryName}</a>` : ''}
+          ${articleCategorySlug ? `<span class="mx-2 text-gray-600">/</span><a href="/${locale}/category/${encodeURIComponent(articleCategorySlug)}" class="text-gray-400 hover:text-purple-400">${escapeHtml(articleCategoryName)}</a>` : ''}
           <span class="mx-2 text-gray-600">/</span>
-          <span class="text-gray-300">${localized.title.substring(0, 50)}...</span>
+          <span class="text-gray-300">${escapeHtml(localized.title.substring(0, 50))}...</span>
         </nav>
 
         <!-- Article Header -->
         <header class="mb-10">
-          ${articleCover ? `<div class="mb-8 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl"><img src="${articleCover}" alt="${localized.title}" class="w-full max-h-[420px] object-cover" loading="eager"></div>` : ''}
+          ${articleCover ? `<div class="mb-8 rounded-2xl overflow-hidden border border-gray-700 shadow-2xl"><img src="${escapeHtml(articleCover)}" alt="${escapeHtml(localized.title)}" class="w-full max-h-[420px] object-cover" loading="eager"></div>` : ''}
           <!-- Type Badge -->
           <div class="mb-4">
             <span class="inline-block px-3 py-1 bg-purple-500/20 text-purple-400 rounded-full text-sm font-medium">
@@ -2847,21 +3065,21 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
           </div>
 
           <!-- Title -->
-          <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">${localized.title}</h1>
+          <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">${escapeHtml(localized.title)}</h1>
 
           <!-- Excerpt -->
-          <p class="text-xl text-gray-400 mb-6 leading-relaxed">${localized.data?.excerpt || ''}</p>
+          <p class="text-xl text-gray-400 mb-6 leading-relaxed">${escapeHtml(localized.data?.excerpt)}</p>
 
           <!-- Meta Info -->
           <div class="flex flex-wrap items-center gap-6 text-sm text-gray-500 border-b border-gray-700 pb-6">
             <!-- Author -->
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
-                ${author.avatar ? `<img src="${author.avatar}" class="w-full h-full rounded-full object-cover">` : author.name.charAt(0)}
+                ${author.avatar ? `<img src="${escapeHtml(author.avatar)}" alt="" class="w-full h-full rounded-full object-cover">` : escapeHtml(author.name.charAt(0))}
               </div>
               <div>
-                <div class="text-white font-medium">${author.name}</div>
-                <div class="text-xs">${author.bio || 'Expert Reviewer'}</div>
+                <div class="text-white font-medium">${escapeHtml(author.name)}</div>
+                <div class="text-xs">${escapeHtml(author.bio || 'Expert Reviewer')}</div>
               </div>
             </div>
 
@@ -2915,12 +3133,12 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
               <h2 class="text-lg font-bold mb-3 flex items-center gap-2">
                 <span>⚡</span> ${t(locale, 'detail.quickVerdict')}
               </h2>
-              <p class="text-gray-300 mb-4">${a.data.quickVerdict.summary || ''}</p>
+              <p class="text-gray-300 mb-4">${escapeHtml(a.data.quickVerdict.summary)}</p>
               ${featuredProducts.length > 0 ? `
               <div class="flex flex-wrap gap-2">
                 <span class="text-sm text-gray-400">${t(locale, 'detail.topPicks')}:</span>
                 ${featuredProducts.slice(0, 3).map((p: any, i: number) => `
-                  <a href="/${locale}/product/${p.slug}" class="text-purple-400 hover:text-purple-300 text-sm">${i === 0 ? '🏆 ' : ''}${p.title}</a>
+                  <a href="/${locale}/product/${encodeURIComponent(p.slug)}" class="text-purple-400 hover:text-purple-300 text-sm">${i === 0 ? '🏆 ' : ''}${escapeHtml(p.title)}</a>
                 `).join('<span class="text-gray-600">•</span>')}
               </div>
               ` : ''}
@@ -2954,7 +3172,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
             ${Array.isArray(a.data?.faq) && a.data.faq.length > 0 ? `
             <section class="mt-8 rounded-xl border border-gray-700 bg-gray-800/50 p-6 md:p-8">
               <h2 class="text-2xl font-bold mb-5">Frequently asked questions</h2>
-              <div class="space-y-5">${a.data.faq.map((item: any) => `<div><h3 class="font-semibold text-white">${item.question || ''}</h3><p class="mt-2 text-gray-300 leading-relaxed">${item.answer || ''}</p></div>`).join('')}</div>
+              <div class="space-y-5">${a.data.faq.map((item: any) => `<div><h3 class="font-semibold text-white">${escapeHtml(item.question)}</h3><p class="mt-2 text-gray-300 leading-relaxed">${escapeHtml(item.answer)}</p></div>`).join('')}</div>
             </section>
             ` : ''}
 
@@ -2976,11 +3194,11 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
             <div class="mt-10 p-6 bg-gray-800/50 rounded-xl border border-gray-700">
               <div class="flex items-start gap-4">
                 <div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
-                  ${author.avatar ? `<img src="${author.avatar}" class="w-full h-full rounded-full object-cover">` : author.name.charAt(0)}
+                  ${author.avatar ? `<img src="${escapeHtml(author.avatar)}" alt="" class="w-full h-full rounded-full object-cover">` : escapeHtml(author.name.charAt(0))}
                 </div>
                 <div>
-                  <h3 class="font-bold text-lg">${author.name}</h3>
-                  <p class="text-gray-400 text-sm mt-1">${author.bio || 'Expert gaming gear reviewer with years of experience testing the latest peripherals.'}</p>
+                  <h3 class="font-bold text-lg">${escapeHtml(author.name)}</h3>
+                  <p class="text-gray-400 text-sm mt-1">${escapeHtml(author.bio || 'Expert gaming gear reviewer with years of experience testing the latest peripherals.')}</p>
                 </div>
               </div>
             </div>

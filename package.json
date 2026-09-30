@@ -23,8 +23,8 @@
     "update:affiliate": "tsx scripts/update-affiliate-links.ts"
   },
   "dependencies": {
-    "@sonicjs-cms/core": "^2.8.0",
-    "hono": "^4.11.7",
+    "@sonicjs-cms/core": "^2.19.0",
+    "hono": "^4.13.11",
     "zod": "^3.25.67"
   },
   "devDependencies": {
