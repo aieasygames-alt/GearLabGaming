@@ -856,6 +856,21 @@ function toAbsoluteUrl(value: string | undefined): string | undefined {
   }
 }
 
+const ARTICLE_COVER_FALLBACKS: Record<string, string> = {
+  'best-budget-gaming-mouse-logitech-g305': '/media/articles/codex-clipboard-3b109a23-6743-47de-8f60-4c4e722710af.webp',
+  'wooting-80he-vs-razer-huntsman-v3-pro': '/media/articles/codex-clipboard-e2605ebe-8cc6-4732-bbb1-369b0eef6e7e.webp',
+  'best-gaming-setup-under-200': '/media/articles/codex-clipboard-38759111-f47b-457d-afe3-25b4499f10f7.webp',
+  'best-small-gaming-mouse': '/media/articles/codex-clipboard-717fee35-029b-4bc9-b7b6-dd82dc62dc54.webp'
+}
+
+function getArticleCover(article: any): string | undefined {
+  return article.data?.featuredImage || ARTICLE_COVER_FALLBACKS[article.slug]
+}
+
+function getProductImage(product: any): string | undefined {
+  return Array.isArray(product.data?.images) ? product.data.images[0] : undefined
+}
+
 function escapeHtml(value: unknown): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -979,7 +994,7 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
 
   if (type === 'Product' && data) {
     const canonicalUrl = `${BASE_URL}/${DEFAULT_LOCALE}/product/${data.slug}`
-    const productImage = toAbsoluteUrl(data.data?.images?.[0])
+    const productImage = toAbsoluteUrl(getProductImage(data))
     const purchaseUrl = toAbsoluteUrl(data.data?.affiliateLinks?.official || data.data?.affiliateLinks?.amazon)
     const schema: any = {
       "@context": "https://schema.org",
@@ -1067,7 +1082,7 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       },
       "datePublished": toIsoDate(data.created_at),
       "dateModified": toIsoDate(data.updated_at || data.created_at),
-      "image": toAbsoluteUrl(data.data?.featuredImage)
+      "image": toAbsoluteUrl(getArticleCover(data))
     }
     if (Array.isArray(data.data?.faq) && data.data.faq.length > 0) {
       return JSON.stringify([
@@ -1095,7 +1110,8 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
       "itemListElement": (data.items || []).map((item: any, index: number) => ({
         "@type": "ListItem",
         "position": index + 1,
-        "url": `${BASE_URL}/${locale}/product/${item.slug}`
+        "name": item.title,
+        "url": `${BASE_URL}/${locale}/${data.itemPath || 'product'}/${item.slug}`
       }))
     })
   }
@@ -1186,11 +1202,11 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
   <meta property="og:locale" content="${locale}" />
 
   <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content="${escapedCanonicalUrl}" />
-  <meta property="twitter:title" content="${escapedTitle}" />
-  <meta property="twitter:description" content="${escapedDescription}" />
-  <meta property="twitter:image" content="${escapedImage}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content="${escapedCanonicalUrl}" />
+  <meta name="twitter:title" content="${escapedTitle}" />
+  <meta name="twitter:description" content="${escapedDescription}" />
+  <meta name="twitter:image" content="${escapedImage}" />
 
   <!-- Canonical & Hreflang -->
   <link rel="canonical" href="${escapedCanonicalUrl}" />
@@ -2105,7 +2121,7 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
 
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
-    const image = Array.isArray(p.data?.images) ? p.data.images[0] : null
+    const image = getProductImage(p)
     return `
     <article class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition relative">
       <label class="absolute top-3 right-3 z-10 bg-gray-900/80 px-2 py-1 rounded text-xs text-white cursor-pointer"><input type="checkbox" class="compare-choice mr-1" value="${p.slug}"> Compare</label>
@@ -2231,6 +2247,7 @@ app.get('/:lang{en|zh|fr|es|ru}/products', async (c) => {
   `, locale, `/${locale}/products`, {
     description: 'Browse independent gaming gear reviews with practical ratings, pros, cons, prices, and buying guidance for mice, keyboards, headsets, monitors, chairs, and desks.',
     keywords: 'gaming gear reviews, gaming mouse reviews, gaming keyboard reviews, gaming headset reviews, gaming monitor reviews',
+    image: getProductImage(products[0]),
     robots: categoryFilter || brandFilter || priceMin > 0 || priceMax < 9999 || ratingMin > 0 || sortBy !== 'newest'
       ? 'noindex,follow'
       : undefined
@@ -2577,13 +2594,7 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
 
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
-    const coverMap: Record<string, string> = {
-      'best-budget-gaming-mouse-logitech-g305': '/media/products/logitech-g305-lightspeed.png',
-      'best-gaming-setup-under-200': '/media/products/royal-kludge-rk61.png',
-      'wooting-80he-vs-razer-huntsman-v3-pro': '/media/products/wooting-60he.png',
-      'best-small-gaming-mouse': '/media/products/lamzu-atlantis-mini.png'
-    }
-    const cover = a.data?.featuredImage || coverMap[a.slug]
+    const cover = getArticleCover(a)
     return `
     <a href="/${locale}/article/${a.slug}" class="group bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="h-48 bg-gray-700 overflow-hidden">${cover ? `<img src="${cover}" alt="${localized.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy">` : `<div class="w-full h-full bg-gradient-to-br from-purple-600 to-blue-600"></div>`}</div>
@@ -2608,6 +2619,7 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
   `, locale, `/${locale}/articles`, {
     description: 'Read gaming gear buying guides, comparisons, and practical reviews covering FPS mice, keyboards, headsets, monitors, chairs, desks, and setup upgrades.',
     keywords: 'gaming gear buying guides, gaming gear comparisons, gaming setup guides, gaming peripheral reviews',
+    image: getArticleCover(articles[0]),
     robots: hasUnsupportedFilters ? 'noindex,follow' : undefined
   }))
 })
@@ -2634,13 +2646,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
   }
 
   const localized = getLocalizedContent(a, locale)
-  const coverMap: Record<string, string> = {
-    'best-budget-gaming-mouse-logitech-g305': '/media/products/logitech-g305-lightspeed.png',
-    'best-gaming-setup-under-200': '/media/products/royal-kludge-rk61.png',
-    'wooting-80he-vs-razer-huntsman-v3-pro': '/media/products/wooting-60he.png',
-    'best-small-gaming-mouse': '/media/products/lamzu-atlantis-mini.png'
-  }
-  const articleCover = a.data?.featuredImage || coverMap[a.slug]
+  const articleCover = getArticleCover(a)
 
   // Get author info
   let author: any = null
@@ -3030,7 +3036,7 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
 
   const productsHTML = filteredProducts.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
-    const image = Array.isArray(p.data?.images) ? p.data.images[0] : null
+    const image = getProductImage(p)
     return `
     <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${image}" alt="${localized.title}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
@@ -3079,8 +3085,9 @@ app.get('/:lang{en|zh|fr|es|ru}/category/:slug', async (c) => {
   `, locale, `/${locale}/category/${slug}`, {
     description: categorySeo.description || localizedCat.data?.description || `${catName} gaming gear reviews and recommendations.`,
     keywords: categorySeo.keywords,
+    image: getProductImage(filteredProducts[0]) || getArticleCover(categoryArticles[0]),
     schemaType: 'ItemList',
-    schemaData: { name: catName, items: filteredProducts },
+    schemaData: { name: catName, items: filteredProducts, itemPath: 'product' },
     breadcrumbs: [
       { name: 'Home', path: '' },
       { name: 'Categories', path: '/categories' },
@@ -3107,7 +3114,7 @@ const renderHomepage = async (c: any, locale: Locale) => {
 
   const productsHTML = products.map((p: any) => {
     const localized = getLocalizedContent(p, locale)
-    const image = Array.isArray(p.data?.images) ? p.data.images[0] : null
+    const image = getProductImage(p)
     return `
     <a href="/${locale}/product/${p.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="aspect-video bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">${image ? `<img src="${image}" alt="${localized.title}" class="w-full h-full object-contain" loading="lazy">` : `<span class="text-6xl">${getCategoryIcon(p.data?.category)}</span>`}</div>
@@ -3124,13 +3131,7 @@ const renderHomepage = async (c: any, locale: Locale) => {
 
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
-    const articleCoverMap: Record<string, string> = {
-      'best-budget-gaming-mouse-logitech-g305': '/media/articles/codex-clipboard-3b109a23-6743-47de-8f60-4c4e722710af.webp',
-      'wooting-80he-vs-razer-huntsman-v3-pro': '/media/articles/codex-clipboard-e2605ebe-8cc6-4732-bbb1-369b0eef6e7e.webp',
-      'best-gaming-setup-under-200': '/media/articles/codex-clipboard-38759111-f47b-457d-afe3-25b4499f10f7.webp',
-      'best-small-gaming-mouse': '/media/articles/codex-clipboard-717fee35-029b-4bc9-b7b6-dd82dc62dc54.webp'
-    }
-    const cover = a.data?.featuredImage || articleCoverMap[a.slug]
+    const cover = getArticleCover(a)
     return `
     <a href="/${locale}/article/${a.slug}" class="bg-white dark:bg-gray-800 rounded-xl overflow-hidden hover:ring-2 hover:ring-purple-500 transition block">
       <div class="h-32 bg-gray-700 overflow-hidden">${cover ? `<img src="${cover}" alt="${localized.title}" class="w-full h-full object-cover" loading="lazy">` : ''}</div>
@@ -3193,7 +3194,8 @@ const renderHomepage = async (c: any, locale: Locale) => {
     </section>
   `, locale, `/${locale}`, {
     description: 'Independent gaming gear reviews, comparisons, and buying guides for mice, keyboards, headsets, monitors, chairs, desks, and complete setups.',
-    keywords: 'gaming gear reviews, gaming gear comparisons, gaming buying guides, gaming peripherals'
+    keywords: 'gaming gear reviews, gaming gear comparisons, gaming buying guides, gaming peripherals',
+    image: getArticleCover(articles[0]) || getProductImage(products[0])
   }))
 }
 
