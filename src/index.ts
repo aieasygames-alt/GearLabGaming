@@ -1032,13 +1032,20 @@ async function getContentBySlug(db: any, collectionId: string, slug: string) {
 
 // Helper: Get category icon
 function getCategoryIcon(categoryId: string): string {
-  let icon = 'package'
-  if (categoryId?.includes('mice') || categoryId === 'cat-mice-001') icon = 'mouse'
-  else if (categoryId?.includes('keyboard') || categoryId === 'cat-keyboards-001') icon = 'keyboard'
-  else if (categoryId?.includes('headset') || categoryId === 'cat-headsets-001') icon = 'headphones'
-  else if (categoryId?.includes('monitor') || categoryId === 'cat-monitors-001') icon = 'monitor'
-  else if (categoryId?.includes('chair') || categoryId === 'cat-chairs-001') icon = 'armchair'
-  return `<i data-lucide="${icon}" class="w-12 h-12" aria-hidden="true"></i>`
+  const id = String(categoryId || '').toLowerCase()
+  let paths = '<path d="M12 2v20M2 12h20"/>'
+  if (id.includes('mice') || id === 'cat-mice-001') {
+    paths = '<rect x="5" y="2" width="14" height="20" rx="7"/><path d="M12 6v4"/>'
+  } else if (id.includes('keyboard') || id === 'cat-keyboards-001') {
+    paths = '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 10h.01M10 10h.01M13 10h.01M16 10h.01M7 14h10"/>'
+  } else if (id.includes('headset') || id === 'cat-headsets-001') {
+    paths = '<path d="M4 14a8 8 0 0 1 16 0"/><path d="M4 14v3a2 2 0 0 0 2 2h1v-7H6a2 2 0 0 0-2 2Zm16 0v3a2 2 0 0 1-2 2h-1v-7h1a2 2 0 0 1 2 2Z"/><path d="M17 19c0 2-2 3-5 3"/>'
+  } else if (id.includes('monitor') || id === 'cat-monitors-001') {
+    paths = '<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8M12 16v5"/>'
+  } else if (id.includes('chair') || id.includes('desk') || id === 'cat-chairs-001') {
+    paths = '<path d="M5 11V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v6"/><path d="M5 11h10a4 4 0 0 1 4 4v1H5Z"/><path d="M7 16v5M17 16v5"/>'
+  }
+  return `<svg class="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`
 }
 
 function getCategoryIconBySlug(slug: string): string {
