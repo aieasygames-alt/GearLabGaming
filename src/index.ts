@@ -76,6 +76,10 @@ function isCommentRateLimited(request: Request): boolean {
 // Inline scripts remain necessary until the page templates move to nonce-based scripts.
 app.use('*', async (c, next) => {
   await next()
+  if (/^\/(admin|auth)(?:\/|$)/.test(c.req.path)) {
+    c.header('X-Robots-Tag', 'noindex, nofollow, noarchive')
+    c.header('Cache-Control', 'private, no-store')
+  }
   c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests")
   c.header('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), payment=(), usb=()')
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin')
@@ -1722,7 +1726,6 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
           </svg>
         </button>
-        <a href="/admin" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg font-medium text-white">${t(locale, 'nav.admin')}</a>
       </div>
     </nav>
   </header>
@@ -1827,6 +1830,10 @@ const renderAbout = (locale: Locale) => wrapHTML('About GearLabGaming', `
       <p>We assess performance, comfort, build quality, features, software, compatibility, and value for the product's intended audience. Scores are category-specific and are not based on price alone.</p>
       <h2>What our reviews include</h2>
       <ul><li>Key specifications and real-world use cases</li><li>Strengths, trade-offs, and who should buy</li><li>Alternatives and comparison context</li><li>Update dates when pricing or firmware changes matter</li></ul>
+      <h2>Specifications are not hands-on test results</h2>
+      <p>Our buying guides may use manufacturer specifications and editorial comparisons. Unless a page explicitly describes a test setup, sample, procedure and measured results, do not interpret a recommendation or score as a standardized lab measurement. Published weights and dimensions are nominal specifications, not measurements taken by this site.</p>
+      <h2>Sources and corrections</h2>
+      <p>Check the exact model and revision against the manufacturer's documentation. Availability, firmware and delivered prices can change. We distinguish spending caps from live prices, and update recommendations when a documented correction changes the buying decision. Fit guidance is a starting point, not a guarantee of comfort.</p>
       <h2>Editorial independence</h2>
       <p>Retail links may earn a commission, but commissions do not change ratings, rankings, or recommendations. See our <a href="/${locale}/affiliate-disclosure">affiliate disclosure</a>.</p>
     </div></section>
@@ -3236,7 +3243,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
 
   // Default author if not found
   if (!author) {
-    author = { name: 'GearLabGaming Team', bio: 'Expert gaming gear reviewers', avatar: null }
+    author = { name: 'GearLabGaming Team', bio: 'Gaming gear buying guides and editorial comparisons', avatar: null }
   }
 
   const [allProducts, allArticles, allCategories] = await Promise.all([

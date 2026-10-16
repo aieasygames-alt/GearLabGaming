@@ -52,4 +52,13 @@ const articleHTML = await (await request('/en/article/wooting-60he-vs-razer-hunt
 assert.ok(articleHTML.includes('rel="canonical" href="https://gearlabgaming.com/en/article/wooting-60he-vs-razer-huntsman-v3-pro"'))
 assert.ok(articleHTML.includes('<h2 id="comparison">Comparison</h2>'), 'Sanitized article body must render')
 assert.ok(!articleHTML.includes('Content coming soon...'))
+assert.ok(!articleHTML.includes('href="/admin"'), 'Public navigation must not advertise admin')
+const aboutHTML = await (await request('/en/about')).text()
+assert.ok(aboutHTML.includes('Specifications are not hands-on test results'))
+const privateResponse = await worker.fetch(new Request('https://gearlabgaming.com/admin'), {
+  ...env, JWT_SECRET: 'test-only-random-secret-for-private-route-regression-tests'
+}, ctx)
+assert.equal(privateResponse.status, 401, 'Anonymous admin requests must require authentication, not fail with 500')
+assert.equal(privateResponse.headers.get('x-robots-tag'), 'noindex, nofollow, noarchive')
+assert.equal(privateResponse.headers.get('cache-control'), 'private, no-store')
 console.log('SEO route integration tests passed.')
