@@ -19,6 +19,7 @@ import priceHistoryCollection from './collections/price-history.collection'
 import commentsCollection from './collections/comments.collection'
 import { toSonicCollectionConfig } from './collection-config'
 import { INDEXNOW_KEY, INDEXNOW_KEY_PATH } from './indexnow'
+import { ARTICLE_REDIRECTS, hasChineseReview, rewriteArticleLinks } from './seo-policy'
 
 // Register all custom collections
 registerCollections([
@@ -770,9 +771,7 @@ const PRODUCT_SLUG_REDIRECTS: Record<string, string> = {
   'lg-27gp850-b-ultragear-review': 'lg-27gp850-b-review'
 }
 
-const ARTICLE_SLUG_REDIRECTS: Record<string, string> = {
-  'budget-gaming-setup-under-200': 'best-gaming-setup-under-200'
-}
+const ARTICLE_SLUG_REDIRECTS = ARTICLE_REDIRECTS
 
 // ============================================
 // HELPER FUNCTIONS
@@ -796,7 +795,7 @@ function getLocalizedContent(item: any, locale: Locale): any {
 
   return {
     ...item,
-    title: translations.title || item.title,
+    title: translations.title || translations.name || item.title,
     data: {
       ...data,
       name: translations.name || data.name,
@@ -942,7 +941,7 @@ function isSafeRichTextUrl(value: string, tagName: string): boolean {
 }
 
 function sanitizeRichText(value: unknown): string {
-  const { document } = parseHTML(`<body>${String(value ?? '')}</body>`)
+  const { document } = parseHTML(`<html><head></head><body>${String(value ?? '')}</body></html>`)
   const body = document.body
   if (!body) return ''
 
@@ -1073,10 +1072,10 @@ function getLanguageSwitcher(currentLocale: Locale, currentPath: string): string
 }
 
 // Helper: Generate hreflang tags
-function getHreflangTags(path: string): string {
+function getHreflangTags(path: string, chineseTranslation = false): string {
   const pathWithoutLang = path.replace(/^\/[a-z]{2}/, '')
   const href = `${BASE_URL}/${DEFAULT_LOCALE}${pathWithoutLang}`
-  return `<link rel="alternate" hreflang="en" href="${href}" />\n  <link rel="alternate" hreflang="x-default" href="${href}" />`
+  return `<link rel="alternate" hreflang="en" href="${href}" />\n  <link rel="alternate" hreflang="x-default" href="${href}" />${chineseTranslation ? `\n  <link rel="alternate" hreflang="zh" href="${BASE_URL}/zh${pathWithoutLang}" />` : ''}`
 }
 
 // Helper: Generate Schema.org structured data
@@ -1098,14 +1097,15 @@ function generateSchemaOrg(type: 'Website' | 'Product' | 'Article' | 'ItemList',
   }
 
   if (type === 'Product' && data) {
-    const canonicalUrl = `${BASE_URL}/${DEFAULT_LOCALE}/product/${data.slug}`
+    const canonicalUrl = `${BASE_URL}/${locale}/product/${data.slug}`
+    const localized = getLocalizedContent(data, locale)
     const productImage = toAbsoluteUrl(getProductImage(data))
     const purchaseUrl = toAbsoluteUrl(data.data?.affiliateLinks?.official || data.data?.affiliateLinks?.amazon)
     const schema: any = {
       "@context": "https://schema.org",
       "@type": "Product",
-      "name": data.title,
-      "description": data.data?.verdict || '',
+      "name": localized.data?.name || localized.title,
+      "description": localized.data?.verdict || '',
       "url": canonicalUrl,
       "mainEntityOfPage": {
         "@type": "WebPage",
@@ -1253,7 +1253,7 @@ function generateBreadcrumbSchema(locale: Locale, breadcrumbs: Array<{ name: str
 // Helper: Common HTML wrapper with locale support and enhanced SEO
 function wrapHTML(title: string, content: string, locale: Locale, path: string, seo: SEOOptions = {}) {
   const langSwitcher = getLanguageSwitcher(locale, path)
-  const hreflangTags = getHreflangTags(path)
+  const hreflangTags = getHreflangTags(path, seo.schemaType === 'Product' && hasChineseReview(seo.schemaData))
   const canonicalPath = path.replace(/^\/[a-z]{2}/, '')
   const canonicalUrl = `${BASE_URL}/${locale}${canonicalPath}`
   const titleWithBrand = /\|\s*GearLabGaming\s*$/i.test(title) ? title : `${title} | GearLabGaming`
@@ -1779,6 +1779,23 @@ app.use('*', async (c, next) => {
   return next()
 })
 
+// Do not serve English fallback content as independently indexable Chinese pages.
+app.use('/zh/*', async (c, next) => {
+  const url = new URL(c.req.url)
+  const productMatch = url.pathname.match(/^\/zh\/product\/([^/]+)$/)
+  if (productMatch) {
+    const product = await getContentBySlug(c.env.DB, COLLECTIONS.products, productMatch[1])
+    if (hasChineseReview(product)) return next()
+  }
+  return c.redirect(`${url.pathname.replace(/^\/zh(?=\/|$)/, '/en')}${url.search}`, 301)
+})
+app.get('/zh', (c) => c.redirect('/en', 301))
+
+app.use('/api/*', async (c, next) => {
+  await next()
+  c.header('X-Robots-Tag', 'noindex, follow')
+})
+
 // ============================================
 // HEALTH & API ENDPOINTS
 // ============================================
@@ -1884,7 +1901,7 @@ app.get('/sitemap.xml', async (c) => {
     getContent(db, COLLECTIONS.categories, { limit: 100 })
   ])
 
-  // Submit only the canonical English URLs until translated editorial content is live.
+  // Submit English content and only Chinese reviews with complete editorial translations.
   let urls = ''
   const addUrl = (path: string, lastmod: string, priority: string) => {
     urls += `
@@ -1907,6 +1924,7 @@ app.get('/sitemap.xml', async (c) => {
   for (const product of products) {
     if (isIndexableProduct(product) && !PRODUCT_SLUG_REDIRECTS[product.slug]) {
       addUrl(`/${DEFAULT_LOCALE}/product/${product.slug}`, formatSitemapDate(product.updated_at || product.created_at), '0.7')
+      if (hasChineseReview(product)) addUrl(`/zh/product/${product.slug}`, formatSitemapDate(product.updated_at || product.created_at), '0.7')
     }
   }
 
@@ -2775,7 +2793,7 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   const additionalSpecs = localized.data?.specs?.additionalSpecs
   const buyingNotes = Array.isArray(localized.data?.buyingNotes) ? localized.data.buyingNotes : []
   const faq = Array.isArray(localized.data?.faq) ? localized.data.faq : []
-  const reviewContent = sanitizeRichText(localized.data?.reviewContent || p.data?.reviewContent || '')
+  const reviewContent = rewriteArticleLinks(sanitizeRichText(localized.data?.reviewContent || p.data?.reviewContent || ''))
   const [allProducts, allArticles, allCategories] = await Promise.all([
     getContent(db, COLLECTIONS.products, { limit: 100 }),
     getContent(db, COLLECTIONS.articles, { limit: 100 }),
@@ -2798,7 +2816,9 @@ app.get('/:lang{en|zh|fr|es|ru}/product/:slug', async (c) => {
   )
   const productCategoryName = productCategory?.data?.name || productCategory?.title || productCategorySlug
 
-  const productSeo = p.data?.seo || {}
+  const productSeo = locale === 'zh'
+    ? { title: `${localized.data?.name || localized.title} - 产品评测`, description: stripHtml(localized.data?.verdict) }
+    : p.data?.seo || {}
 
   return c.html(wrapHTML(productSeo.title || localized.title, `
     <section class="py-12 px-4">
@@ -3135,7 +3155,7 @@ app.get('/:lang{en|zh|fr|es|ru}/articles', async (c) => {
   const locale = getLocale(c.req.param('lang'))
   const db = c.env.DB
   const hasUnsupportedFilters = Boolean(c.req.query('author'))
-  const articles = (await getContent(db, COLLECTIONS.articles, { limit: 50 })).filter(isIndexableArticle)
+  const articles = (await getContent(db, COLLECTIONS.articles, { limit: 100 })).filter((item: any) => isIndexableArticle(item) && !ARTICLE_SLUG_REDIRECTS[item.slug])
 
   const articlesHTML = articles.map((a: any) => {
     const localized = getLocalizedContent(a, locale)
@@ -3231,9 +3251,12 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     isIndexableProduct(product) && !PRODUCT_SLUG_REDIRECTS[product.slug] && (featuredProductIds.includes(product.id) || featuredProductIds.includes(product.slug))
   )
 
+  const explicitRelatedIds = Array.isArray(a.data?.relatedArticles) ? a.data.relatedArticles : []
   const relatedArticles = [...allArticles]
     .filter((article: any) => isIndexableArticle(article) && article.id !== a.id && !ARTICLE_SLUG_REDIRECTS[article.slug])
     .sort((left: any, right: any) => {
+      const explicitDifference = Number(explicitRelatedIds.includes(right.id) || explicitRelatedIds.includes(right.slug)) - Number(explicitRelatedIds.includes(left.id) || explicitRelatedIds.includes(left.slug))
+      if (explicitDifference) return explicitDifference
       const leftMatchesCategory = areSameCategory(left.data?.category, a.data?.category, allCategories) ? 1 : 0
       const rightMatchesCategory = areSameCategory(right.data?.category, a.data?.category, allCategories) ? 1 : 0
       return rightMatchesCategory - leftMatchesCategory || Number(right.updated_at || 0) - Number(left.updated_at || 0)
@@ -3241,7 +3264,7 @@ app.get('/:lang{en|zh|fr|es|ru}/article/:slug', async (c) => {
     .slice(0, 3)
 
   // Generate TOC from content headings
-  const content = sanitizeRichText(localized.data?.content || '')
+  const content = rewriteArticleLinks(sanitizeRichText(localized.data?.content || ''))
   const tocItems: { level: number; text: string; id: string }[] = []
   const contentWithIds = content.replace(/<h([2-4])>(.*?)<\/h\1>/g, (match: string, level: string, text: string) => {
     const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -3665,8 +3688,8 @@ const renderHomepage = async (c: any, locale: Locale) => {
     const featuredDifference = Number(Boolean(right.data?.featured)) - Number(Boolean(left.data?.featured))
     return featuredDifference || Number(right.updated_at || right.created_at || 0) - Number(left.updated_at || left.created_at || 0)
   }
-  const products = allProducts.filter(isIndexableProduct).sort(byFeaturedThenRecent).slice(0, 6)
-  const articles = allArticles.filter(isIndexableArticle).sort(byFeaturedThenRecent).slice(0, 3)
+  const products = allProducts.filter((item: any) => isIndexableProduct(item) && !PRODUCT_SLUG_REDIRECTS[item.slug]).sort(byFeaturedThenRecent).slice(0, 6)
+  const articles = allArticles.filter((item: any) => isIndexableArticle(item) && !ARTICLE_SLUG_REDIRECTS[item.slug]).sort(byFeaturedThenRecent).slice(0, 6)
   const categories = allCategories.filter(isIndexableCategory).slice(0, 6)
 
   const productsHTML = products.map((p: any) => {
