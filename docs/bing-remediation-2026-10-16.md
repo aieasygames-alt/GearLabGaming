@@ -50,3 +50,13 @@ IndexNow accepted the two updated guide URLs and `/en/about` with HTTP 200. This
 - Separate unresolved infrastructure finding: `www.gearlabgaming.com` did not connect in Chrome or curl. Google's public DNS-over-HTTPS resolver returned status 3 (NXDOMAIN) for its A query. A Worker route alone does not create DNS. The apex site passed; www requires a DNS record and subsequent HTTPS/redirect verification. No DNS changes were made as part of this acceptance check.
 
 Raw acceptance results are stored locally under `.wrangler/seo-backups/live-verification/` (ignored, not committed). These are current HTTP/browser checks, not a Core Web Vitals field assessment or proof of search-engine recrawling.
+
+## www DNS remediation
+
+Added a Cloudflare-proxied CNAME `www` pointing to `gearlabgaming.com`, TTL Auto, without changing the existing apex Worker or verification TXT record. Added an early Worker redirect for the exact www hostname to HTTPS apex, preserving path and query. Regression tests cover both incoming HTTP and HTTPS.
+
+Deployed Worker version `5b778945-9b58-409b-8f44-f5f0022983f7`; build, route tests and diff checks passed. Cloudflare public DNS returned A records and Google returned AAAA records; a Google A query with ECS disabled also returned valid A records. The earlier ordinary Google A response retained a cached NXDOMAIN.
+
+Using a freshly resolved Cloudflare IP with the original www hostname/SNI and normal certificate verification (no insecure flags), HTTPS requests to `/`, `/en`, the updated guide with a query, and `/sitemap.xml` all returned 301 to the exact HTTPS apex destination. HTTP `/en?ref=www-verification` also returned the exact 301 destination. Following the guide redirect reached 200 in one hop; TLS verification result was 0. Chrome and the local proxy's ordinary DNS path still returned connection-closed during the immediate check, consistent with stale negative DNS caching; ordinary browser verification is not claimed complete. No browser/OS DNS or security settings were changed.
+
+Local DNS screenshot and request evidence are saved in `.wrangler/seo-backups/live-verification/`.

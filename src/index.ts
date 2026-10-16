@@ -50,6 +50,17 @@ type AppBindings = { DB: any; MEDIA_BUCKET: R2Bucket; ENVIRONMENT?: string }
 
 const app = new Hono<{ Bindings: AppBindings }>()
 
+app.use('*', async (c, next) => {
+  const url = new URL(c.req.url)
+  if (url.hostname === 'www.gearlabgaming.com') {
+    url.hostname = 'gearlabgaming.com'
+    url.protocol = 'https:'
+    url.port = ''
+    return c.redirect(url.toString(), 301)
+  }
+  await next()
+})
+
 const COMMENT_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 const COMMENT_RATE_LIMIT_MAX_REQUESTS = 5
 const COMMENT_MAX_BODY_BYTES = 8_192

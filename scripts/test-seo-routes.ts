@@ -27,6 +27,11 @@ const env: any = {
 }
 const ctx: any = { waitUntil() {}, passThroughOnException() {} }
 const request = (path: string) => worker.fetch(new Request(`https://gearlabgaming.com${path}`), env, ctx)
+for (const protocol of ['http', 'https']) {
+  const response = await worker.fetch(new Request(`${protocol}://www.gearlabgaming.com/en/article/how-to-choose-gaming-mouse-2026?ref=test`), env, ctx)
+  assert.equal(response.status, 301)
+  assert.equal(response.headers.get('location'), 'https://gearlabgaming.com/en/article/how-to-choose-gaming-mouse-2026?ref=test')
+}
 for (const path of ['/zh/category/mice', '/zh/articles', '/zh/product/keychron-q1-pro-review']) {
   const response = await request(path)
   assert.equal(response.status, 301, path)
