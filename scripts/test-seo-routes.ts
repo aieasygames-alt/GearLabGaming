@@ -53,6 +53,8 @@ assert.ok(articleHTML.includes('rel="canonical" href="https://gearlabgaming.com/
 assert.ok(articleHTML.includes('<h2 id="comparison">Comparison</h2>'), 'Sanitized article body must render')
 assert.ok(!articleHTML.includes('Content coming soon...'))
 assert.ok(!articleHTML.includes('href="/admin"'), 'Public navigation must not advertise admin')
+assert.ok(!articleHTML.includes('nav.home'), 'Breadcrumb home label must be translated')
+assert.ok(articleHTML.includes('class="site-nav-links '), 'Navigation must support mobile wrapping')
 const aboutHTML = await (await request('/en/about')).text()
 assert.ok(aboutHTML.includes('Specifications are not hands-on test results'))
 const privateResponse = await worker.fetch(new Request('https://gearlabgaming.com/admin'), {

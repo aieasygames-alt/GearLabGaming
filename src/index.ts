@@ -112,7 +112,7 @@ const LOCALE_NAMES: Record<Locale, string> = {
 // Translation strings
 const TRANSLATIONS: Record<Locale, any> = {
   en: {
-    nav: { products: 'Products', articles: 'Articles', categories: 'Categories', admin: 'Admin' },
+    nav: { home: 'Home', products: 'Products', articles: 'Articles', categories: 'Categories', admin: 'Admin' },
     home: {
       hero: 'Expert Gaming Gear Reviews',
       subtitle: 'In-depth reviews, comparisons, and buying guides for gaming mice, keyboards, headsets, and monitors.',
@@ -247,7 +247,7 @@ const TRANSLATIONS: Record<Locale, any> = {
     }
   },
   zh: {
-    nav: { products: '产品', articles: '文章', categories: '分类', admin: '管理' },
+    nav: { home: '首页', products: '产品', articles: '文章', categories: '分类', admin: '管理' },
     home: {
       hero: '专业游戏装备评测',
       subtitle: '游戏鼠标、键盘、耳机和显示器的深度评测、对比和购买指南。',
@@ -382,7 +382,7 @@ const TRANSLATIONS: Record<Locale, any> = {
     }
   },
   fr: {
-    nav: { products: 'Produits', articles: 'Articles', categories: 'Catégories', admin: 'Admin' },
+    nav: { home: 'Accueil', products: 'Produits', articles: 'Articles', categories: 'Catégories', admin: 'Admin' },
     home: {
       hero: 'Avis d\'experts sur l\'équipement gaming',
       subtitle: 'Avis approfondis, comparaisons et guides d\'achat pour souris, claviers, casques et moniteurs gaming.',
@@ -508,7 +508,7 @@ const TRANSLATIONS: Record<Locale, any> = {
     }
   },
   es: {
-    nav: { products: 'Productos', articles: 'Artículos', categories: 'Categorías', admin: 'Admin' },
+    nav: { home: 'Inicio', products: 'Productos', articles: 'Artículos', categories: 'Categorías', admin: 'Admin' },
     home: {
       hero: 'Reseñas expertas de equipos gaming',
       subtitle: 'Reseñas detalladas, comparaciones y guías de compra para ratones, teclados, auriculares y monitores gaming.',
@@ -634,7 +634,7 @@ const TRANSLATIONS: Record<Locale, any> = {
     }
   },
   ru: {
-    nav: { products: 'Продукты', articles: 'Статьи', categories: 'Категории', admin: 'Админ' },
+    nav: { home: 'Главная', products: 'Продукты', articles: 'Статьи', categories: 'Категории', admin: 'Админ' },
     home: {
       hero: 'Экспертные обзоры игрового оборудования',
       subtitle: 'Подробные обзоры, сравнения и руководства по покупке игровых мышей, клавиатур, гарнитур и мониторов.',
@@ -1667,6 +1667,13 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
     /* Lazy load images */
     img[loading="lazy"] { opacity: 0; transition: opacity 0.3s; }
     img[loading="lazy"].loaded { opacity: 1; }
+    @media (max-width: 767px) {
+      .site-nav { height: auto; min-height: 4rem; flex-wrap: wrap; gap: .5rem; padding-top: .75rem; padding-bottom: .75rem; }
+      .site-nav > a { white-space: nowrap; }
+      .site-nav-links { width: 100%; flex-wrap: wrap; gap: .75rem; font-size: .875rem; }
+      .prose table { table-layout: fixed; overflow-wrap: anywhere; }
+      .prose th, .prose td { padding: .5rem; }
+    }
     @media (min-width: 640px) {
       .sm\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .sm\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1704,9 +1711,9 @@ function wrapHTML(title: string, content: string, locale: Locale, path: string, 
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
   <header class="bg-white/80 dark:bg-gray-800/50 backdrop-blur-lg sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700">
-    <nav class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+    <nav class="site-nav max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <a href="/${locale}" class="text-2xl font-bold">🎮 GearLabGaming</a>
-      <div class="flex items-center gap-4">
+      <div class="site-nav-links flex items-center gap-4">
         <a href="/${locale}/products" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.products')}</a>
         <a href="/${locale}/articles" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.articles')}</a>
         <a href="/${locale}/categories" class="text-gray-600 dark:text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-white">${t(locale, 'nav.categories')}</a>

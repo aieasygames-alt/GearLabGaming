@@ -38,3 +38,15 @@ Final live verification passed for all 52 sitemap URLs: no missing descriptions,
 Manufacturer-link spot checks returned 200 for Razer and the redirected Logitech page. Pulsar returned 429 to the automated request, so its current page content could not be independently verified during this run. The guide explicitly asks readers to check exact-model specifications; no new numerical claims rely on that unverified response.
 
 IndexNow accepted the two updated guide URLs and `/en/about` with HTTP 200. This confirms submission acceptance, not recrawling, indexing, ranking or citation recovery.
+
+## Independent live acceptance check (22:37 Asia/Shanghai)
+
+- All 52 sitemap pages returned 200, one H1, a unique nonempty description, a matching self-canonical and no accidental noindex. All 52 JSON-LD blocks parsed successfully.
+- Checked 76 distinct internal link targets and 32 local assets (58 additional requests beyond sitemap pages): no HTTP 4xx/5xx. Same-page anchors resolved to existing IDs.
+- All four retired English article URLs and three untranslated Chinese examples returned the expected 301 destinations. Missing article and product URLs returned genuine 404 responses.
+- Admin returned 401; login returned 200. Both retained noindex and private/no-store headers. Robots returned 200 and referenced the sitemap.
+- Chrome confirmed the two mouse-guide body updates and no broken loaded images. A responsive check found existing navigation overflow and a literal `nav.home` breadcrumb. Fixed the shared mobile navigation wrapping, narrow-screen article table layout and home-label translations. Rechecked homepage and both guides at 390px, and buying guide at 320px: document width did not exceed viewport width. Temporary viewport overrides were reset.
+- Follow-up production Worker version: `895547b7-59f4-4fde-b715-b0005faeba6f`. Build, SEO policy tests, route tests, UI utility audit (339 classes) and diff checks passed before deployment.
+- Separate unresolved infrastructure finding: `www.gearlabgaming.com` did not connect in Chrome or curl. Google's public DNS-over-HTTPS resolver returned status 3 (NXDOMAIN) for its A query. A Worker route alone does not create DNS. The apex site passed; www requires a DNS record and subsequent HTTPS/redirect verification. No DNS changes were made as part of this acceptance check.
+
+Raw acceptance results are stored locally under `.wrangler/seo-backups/live-verification/` (ignored, not committed). These are current HTTP/browser checks, not a Core Web Vitals field assessment or proof of search-engine recrawling.
