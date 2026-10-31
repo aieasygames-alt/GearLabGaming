@@ -1,6 +1,23 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const source = readFileSync(new URL('../src/index.ts', import.meta.url), 'utf8')
+function getSourceFiles(dir: string): string[] {
+  let files: string[] = []
+  for (const entry of readdirSync(dir)) {
+    const fullPath = join(dir, entry)
+    if (statSync(fullPath).isDirectory()) {
+      files = files.concat(getSourceFiles(fullPath))
+    } else if (entry.endsWith('.ts') && !entry.includes('.bak') && !entry.includes('.tmp')) {
+      files.push(fullPath)
+    }
+  }
+  return files
+}
+
+const srcDir = fileURLToPath(new URL('../src', import.meta.url))
+const files = getSourceFiles(srcDir)
+const source = files.map((file) => readFileSync(file, 'utf8')).join('\n')
 const style = source.match(/<style>([\s\S]*?)<\/style>/)?.[1] || ''
 
 const tokens = new Set<string>()
